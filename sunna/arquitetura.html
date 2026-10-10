@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sunna — Arquitetura</title>
+<link rel="stylesheet" href="assets/sunna.css">
+<script src="assets/sunna.js" defer></script>
+</head>
+<body>
+
+<a class="skip" href="#conteudo">Pular para o conteúdo</a>
+
+<nav class="rail" aria-label="Índice da documentação">
+  <a class="rail__brand" href="index.html">SUNNA</a>
+  <p class="rail__group" id="g-guia">guia</p>
+  <ul class="rail__list" aria-labelledby="g-guia">
+    <li><a class="rail__link" href="index.html">Visão geral</a></li>
+    <li><a class="rail__link" href="inicio.html">Primeiros passos</a></li>
+    <li><a class="rail__link" href="coletores.html">Coletores</a></li>
+    <li><a class="rail__link" href="achados.html">Achados</a></li>
+    <li><a class="rail__link" href="arquitetura.html" aria-current="page">Arquitetura</a></li>
+  </ul>
+  <p class="rail__group" id="g-ref">referência</p>
+  <ul class="rail__list" aria-labelledby="g-ref">
+    <li><a class="rail__link" href="referencia.html">Contratos</a></li>
+  </ul>
+</nav>
+
+<div class="main">
+<div class="shell" id="conteudo">
+
+  <header class="page-head">
+    <p class="page-head__eyebrow">Guia &middot; 04</p>
+    <h1>Arquitetura</h1>
+    <p class="lede">Um núcleo sem interface, duas cascas que só desenham, e um fluxo de estado onde uma única função escreve. A forma foi copiada do Beholder por pedido explícito — e o Beholder, por sua vez, é somente leitura.</p>
+  </header>
+
+  <div class="ornament" aria-hidden="true"><span>&#10042;</span></div>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">I &middot; Roots</span>
+      <h2>Três raízes, um repositório</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Root</th><th>Papel</th><th>Stack</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>core</td><td>Motor de varredura, sem UI</td><td>Rust 2021 &middot; serde &middot; quick-xml &middot; chrono &middot; thiserror</td></tr>
+          <tr><td>app-egui</td><td>Casca imediata &mdash; branch <code>main</code></td><td>eframe 0.29 &middot; egui 0.29</td></tr>
+          <tr><td>app-tauri</td><td>Casca WebView &mdash; branch <code>tauri</code></td><td>Tauri 2 &middot; HTML/CSS/JS vanilla</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><code>core</code> existe em toda branch. Cada casca existe apenas na sua. As duas consomem o mesmo <code>Snapshot</code> e a mesma máquina de estado — diferem só na View.</p>
+
+    <h3>Unidade de trabalho</h3>
+    <p>No <code>core</code>, a unidade é a <strong>operação nomeada</strong>: uma função pública com entrada explícita e efeito declarado. Coletor é <em>query</em> sobre o sistema operacional; <code>scan::run</code> é o único <em>command</em>.</p>
+
+    <p>Nas cascas, a unidade é a <strong>tela</strong>. Nenhuma das duas guarda estado paralelo ao <code>Model</code>.</p>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">II &middot; Fluxo</span>
+      <h2>Unidirecional, travado</h2>
+    </div>
+
+    <span class="code-label">fluxo de estado</span>
+<pre><code>Msg ──► update(Model) ──► Model ──► View
+                ▲
+worker de scan ─┘  (PhaseChanged, ScanFinished, ScanFailed)</code></pre>
+
+    <ul>
+      <li>Um <code>Model</code> central, em <code>core::scan</code>. Elm, fluxo unidirecional.</li>
+      <li>A varredura roda em thread de trabalho e só fala com o <code>Model</code> por <code>Msg</code>.</li>
+      <li><code>update</code> é a <strong>única</strong> função que escreve no <code>Model</code>.</li>
+    </ul>
+
+    <div class="note note--rule">
+      <span class="note__label">Proibido</span>
+      <p>MVC, MVVM, hexagonal, clean, DDD, e um segundo <code>Model</code> por casca. A proibição foi herdada do Beholder, que serviu de referência de arquitetura a pedido explícito de quem encomendou o projeto.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">III &middot; Escada</span>
+      <h2>Um nível por vez</h2>
+    </div>
+
+    <p>A estrutura de cada root só sobe de nível quando um gatilho é <strong>medido</strong>, nunca quando parece que vai precisar. Estrutura cara sem gatilho medido é proibida.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Root</th><th>Nível atual</th><th>Próximo gatilho</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>core</td><td>L0 &mdash; um arquivo por coletor, funções livres</td><td>L1 quando um coletor passar de ~200 linhas ou ganhar 3+ helpers privados</td></tr>
+          <tr><td>app-egui</td><td>W1 &mdash; view fatiada em <code>app</code>, <code>views</code>, <code>widgets</code></td><td>W2 quando um arquivo de tela passar de ~400 linhas</td></tr>
+          <tr><td>app-tauri</td><td>W0 &mdash; um <code>index.html</code> e um <code>main.js</code></td><td>W1 quando <code>main.js</code> passar de ~400 linhas ou surgir um 3º módulo de view</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Histórico</h3>
+    <p>A única subida de nível até agora foi medida, não estimada: em 26 de setembro de 2026, <code>app.rs</code> da casca egui mediu <strong>784 linhas</strong>, acima do gatilho de ~400 — e só então W0 virou W1.</p>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">IV &middot; Código</span>
+      <h2>As regras que não se negociam</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Regra</th><th>Por quê</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Processo externo por <code>cmd::run*</code> com vetor de argumentos</td><td>Nenhum shell, nenhuma interpolação de string em linha de comando. Nunca.</td></tr>
+          <tr><td>Só saída estruturada</td><td><code>nmap -oX</code>, <code>docker --format json</code>, <code>ip -j</code>. A tabela de texto formatada é feita para humano e muda entre versões.</td></tr>
+          <tr><td>Serviço só com <code>method="probe"</code></td><td>A alternativa produz afirmação falsa com cara de fato.</td></tr>
+          <tr><td>PID ausente é <code>"requer root"</code></td><td>Deduzir dono de socket pelo <code>ps</code> aponta o processo errado quando há homônimos.</td></tr>
+          <tr><td>MAC localmente administrado zera o fabricante</td><td>Exibir OUI de MAC inventado é afirmar algo falso.</td></tr>
+          <tr><td>Coletor ausente vira <code>skipped</code> com motivo</td><td>Seção vazia muda comunica "nada aqui" quando a verdade é "não foi possível olhar".</td></tr>
+          <tr><td>Dependência nova só se listada na especificação</td><td>O conjunto de bibliotecas foi decidido antes, em <code>00-brief.md</code> e <code>07-ui.md</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <span class="note__label">Um binário, um processo</span>
+      <p>Sidecar em outra linguagem é proibido — foi exatamente essa regra que descartou o coletor em Python que existia antes deste projeto.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">V &middot; Testes</span>
+      <h2>O que cada tipo exige</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Alvo</th><th>Exigência</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Parser</td><td>Teste sobre <strong>fixture de saída real</strong> do comando correspondente, com MAC e hostname anonimizados. Parser sem fixture não entra.</td></tr>
+          <tr><td>Regra de achado</td><td>Caso positivo <strong>e</strong> caso negativo. Sem o negativo, não entra.</td></tr>
+          <tr><td><code>update</code></td><td>Um teste por variante de <code>Msg</code> que muda estado.</td></tr>
+          <tr><td>Processo externo</td><td>Não é testado em unidade; é coberto pelo <code>examples/scan</code>, que roda contra o sistema real.</td></tr>
+          <tr><td>Teste existente</td><td><strong>Imutável.</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">VI &middot; Limites</span>
+      <h2>O que a especificação protege</h2>
+    </div>
+
+    <p>As SPECS, de <code>00-brief.md</code> a <code>07-ui.md</code>, são canônicas: valem mais do que aquilo que o código porventura esteja fazendo. Quando o comportamento muda, código e especificação mudam no mesmo commit.</p>
+
+    <div class="note note--rule">
+      <span class="note__label">O Beholder é somente leitura</span>
+      <p>O projeto Beholder serviu de referência de arquitetura e nada mais. Nenhum arquivo dele pode ser modificado, copiado com marca, nem incluído em ferramenta que escreva. <a href="../beholder/index.html">Ver a documentação do Beholder &rarr;</a></p>
+    </div>
+  </section>
+
+  <nav class="next" aria-label="Navegação entre páginas">
+    <a class="next__link" href="achados.html">
+      <span class="next__dir">Anterior</span>
+      <span class="next__title">&larr; Achados</span>
+    </a>
+    <a class="next__link next__link--fwd" href="referencia.html">
+      <span class="next__dir">Próxima</span>
+      <span class="next__title">Contratos &rarr;</span>
+    </a>
+  </nav>
+
+  <footer>
+    <span><em>Sunna</em> &middot; Documentação</span>
+    <span>Outubro de 2026 &middot; MIT</span>
+  </footer>
+
+</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,644 @@
+/* ============================================================
+   SUNNA — folha única da documentação
+   Tokens canônicos em ../MASTER.md. Nenhum valor solto aqui.
+   ============================================================ */
+
+:root {
+  /* — Azul noturno da tapeçaria — */
+  --navy-900: #0A1220;
+  --navy-800: #0E1A2E;
+  --navy-700: #142440;
+  --navy-600: #1C3050;
+
+  /* — Ouro solar: o halo, as runas, a palavra SUNNA — */
+  --sun-300: #F5E3B8;
+  --sun-400: #FFCF6B;
+  --sun-500: #F0B840;
+  --sun-700: #B8821F;
+
+  /* — Azul estelar: as constelações — */
+  --star-400: #8FB4DE;
+  --star-600: #5A7FA8;
+
+  /* — Tinta — */
+  --ink-100: #F0EADC;
+  --ink-300: #C9C0AE;
+  --ink-500: #8D8674;
+  --ink-700: #5A5549;
+
+  /* — Filetes — */
+  --rule-sun: rgba(240, 184, 64, 0.28);
+  --rule-faint: rgba(240, 184, 64, 0.12);
+
+  /* — Espaçamento (base 8) — */
+  --space-1: 4px;  --space-2: 8px;   --space-3: 12px;
+  --space-4: 16px; --space-6: 24px;  --space-8: 32px;
+  --space-12: 48px; --space-16: 64px; --space-24: 96px;
+
+  /* — Raio — */
+  --radius-sm: 3px; --radius-md: 6px; --radius-lg: 10px;
+
+  /* — Sombra — */
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-md: 0 6px 20px rgba(0,0,0,0.4);
+  --shadow-sun: 0 0 24px rgba(240,184,64,0.16);
+
+  /* — Movimento — */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --t-fast: 150ms; --t-normal: 250ms; --t-slow: 350ms;
+
+  /* — Tipografia — */
+  --serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Times New Roman', serif;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --mono: 'SF Mono', 'Monaco', 'Cascadia Code', 'Courier New', monospace;
+
+  /* — Rail — */
+  --rail-w: 248px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--navy-900);
+  color: var(--ink-300);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   PULAR PARA O CONTEÚDO
+   ============================================================ */
+
+.skip {
+  position: absolute;
+  left: -9999px;
+  top: var(--space-2);
+  z-index: 100;
+  background: var(--navy-700);
+  color: var(--sun-400);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+  font-family: var(--serif);
+  text-decoration: none;
+}
+.skip:focus { left: var(--space-6); }
+
+/* ============================================================
+   RAIL — o eixo. Espelha SPECS/07-ui.md do produto.
+   ============================================================ */
+
+.rail {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: var(--rail-w);
+  background: var(--navy-800);
+  border-right: 1px solid var(--rule-sun);
+  padding: var(--space-8) 0;
+  overflow-y: auto;
+  z-index: 20;
+}
+
+.rail__brand {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--sun-300);
+  letter-spacing: 0.14em;
+  text-decoration: none;
+  padding: 0 var(--space-6) var(--space-6);
+  border-bottom: 1px solid var(--rule-faint);
+  margin-bottom: var(--space-6);
+  transition: color var(--t-normal) var(--ease);
+}
+.rail__brand:hover { color: var(--sun-400); }
+.rail__brand:focus-visible {
+  outline: 2px solid var(--star-600);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+.rail__group {
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: lowercase;
+  color: var(--star-400);
+  padding: var(--space-6) var(--space-6) var(--space-2);
+}
+.rail__group:first-of-type { padding-top: 0; }
+
+.rail__list { list-style: none; }
+
+.rail__link {
+  display: block;
+  padding: var(--space-2) var(--space-6);
+  border-left: 2px solid transparent;
+  font-family: var(--serif);
+  font-size: 0.97rem;
+  color: var(--ink-500);
+  text-decoration: none;
+  transition: color var(--t-normal) var(--ease),
+              border-color var(--t-normal) var(--ease);
+}
+.rail__link:hover { color: var(--sun-400); }
+.rail__link:focus-visible {
+  outline: 2px solid var(--star-600);
+  outline-offset: -2px;
+  border-radius: var(--radius-sm);
+}
+.rail__link:active { color: var(--sun-500); }
+.rail__link[aria-current="page"] {
+  color: var(--sun-500);
+  border-left-color: var(--sun-500);
+}
+
+/* ============================================================
+   CONTEÚDO
+   ============================================================ */
+
+.main { margin-left: var(--rail-w); }
+
+.shell {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: var(--space-24) var(--space-12);
+}
+
+/* ============================================================
+   ESTAMPA — só na abertura.
+   A tapeçaria inteira, nunca decepada: a largura fica amarrada
+   à altura pela própria proporção da arte.
+   ============================================================ */
+
+.hero { margin-bottom: var(--space-16); }
+
+.hero__plate {
+  position: relative;
+  width: 100%;
+  max-width: min(820px, 88vh);
+  margin: 0 auto var(--space-8);
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+}
+
+.hero__image {
+  position: absolute;
+  inset: 0;
+  background-image: url('hero-opt.jpg');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.hero__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, var(--navy-900) 0%, transparent 9%, transparent 80%, rgba(10,18,32,0.55) 94%, var(--navy-900) 100%),
+    linear-gradient(to right, var(--navy-900) 0%, transparent 8%, transparent 92%, var(--navy-900) 100%);
+}
+
+.hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--rule-sun);
+}
+
+.hero__meta-label {
+  display: block;
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  margin-bottom: var(--space-1);
+}
+
+.hero__meta-value {
+  font-family: var(--serif);
+  color: var(--sun-400);
+  font-size: 0.97rem;
+}
+
+.page-head { margin-bottom: var(--space-16); }
+
+.page-head__eyebrow {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--star-400);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.page-head__eyebrow::after {
+  content: '';
+  flex: 1;
+  max-width: 160px;
+  height: 1px;
+  background: linear-gradient(to right, var(--star-600), transparent);
+}
+
+h1 {
+  font-family: var(--serif);
+  font-size: clamp(2.1rem, 4.5vw, 3rem);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--sun-300);
+  letter-spacing: 0.02em;
+  margin-bottom: var(--space-4);
+}
+
+h2 {
+  font-family: var(--serif);
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  font-weight: 700;
+  color: var(--sun-300);
+  line-height: 1.25;
+  margin-bottom: var(--space-6);
+}
+
+h3 {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--sun-400);
+  margin: var(--space-12) 0 var(--space-4);
+}
+
+h4 {
+  font-family: var(--sans);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--sun-400);
+  margin-bottom: var(--space-2);
+}
+
+p { margin-bottom: var(--space-4); max-width: 72ch; }
+p:last-child { margin-bottom: 0; }
+
+strong { color: var(--ink-100); font-weight: 600; }
+em { color: var(--sun-400); }
+
+a { color: var(--sun-400); text-decoration-color: var(--rule-sun); }
+a:hover { color: var(--sun-300); }
+a:focus-visible {
+  outline: 2px solid var(--star-600);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+ul, ol { margin: 0 0 var(--space-4) var(--space-6); max-width: 72ch; }
+li { margin-bottom: var(--space-2); }
+
+.lede {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  line-height: 1.65;
+  color: var(--ink-100);
+  max-width: 68ch;
+}
+
+.lede::first-letter {
+  float: left;
+  font-family: var(--serif);
+  font-size: 4.2rem;
+  line-height: 0.82;
+  font-weight: 700;
+  color: var(--sun-500);
+  padding: var(--space-2) var(--space-3) 0 0;
+}
+
+/* ============================================================
+   SEÇÃO E ORNAMENTO
+   ============================================================ */
+
+.section { margin-bottom: var(--space-24); }
+.section:last-child { margin-bottom: 0; }
+
+.section__head {
+  margin-bottom: var(--space-8);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--rule-sun);
+}
+
+/* O título já é o fim do cabeçalho: a margem dele somaria à do bloco. */
+.section__head h2 { margin-bottom: 0; }
+
+.section__number {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--star-400);
+  display: block;
+  margin-bottom: var(--space-2);
+}
+
+.ornament {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: var(--space-16) 0;
+  color: var(--sun-500);
+  opacity: 0.55;
+}
+.ornament::before, .ornament::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rule-sun);
+}
+.ornament span { font-size: 0.95rem; letter-spacing: 0.4em; }
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-6);
+}
+
+.card {
+  background: var(--navy-800);
+  border: 1px solid var(--rule-faint);
+  border-left: 2px solid var(--sun-500);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  transition: border-color var(--t-normal) var(--ease),
+              box-shadow var(--t-normal) var(--ease),
+              transform var(--t-normal) var(--ease);
+}
+
+.card:hover {
+  border-color: var(--rule-sun);
+  border-left-color: var(--sun-400);
+  box-shadow: var(--shadow-md), var(--shadow-sun);
+  transform: translateY(-3px);
+}
+
+.card p { font-size: 0.92rem; margin: 0; }
+
+/* Card que leva a outra página. */
+a.card { display: block; text-decoration: none; color: var(--ink-300); }
+a.card:hover { color: var(--ink-300); }
+a.card h4 { color: var(--sun-400); }
+
+/* ============================================================
+   TABELAS
+   ============================================================ */
+
+.table-wrap { overflow-x: auto; margin: var(--space-6) 0; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  min-width: 460px;
+}
+
+thead th {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--star-400);
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--rule-sun);
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--rule-faint);
+  vertical-align: top;
+}
+
+tbody tr { transition: background var(--t-fast) var(--ease); }
+tbody tr:hover { background: var(--navy-800); }
+tbody tr:last-child td { border-bottom: none; }
+
+td:first-child {
+  font-family: var(--serif);
+  color: var(--sun-400);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Tabela de casos: primeira coluna não é rótulo, é prosa. */
+.table--cases td:first-child {
+  font-family: var(--sans);
+  color: var(--ink-300);
+  font-weight: 400;
+  white-space: normal;
+}
+
+/* ============================================================
+   CÓDIGO
+   ============================================================ */
+
+code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  color: var(--star-400);
+  background: var(--navy-700);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+pre {
+  background: var(--navy-800);
+  border: 1px solid var(--rule-faint);
+  border-left: 2px solid var(--star-600);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  overflow-x: auto;
+  margin: var(--space-4) 0;
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  color: var(--ink-300);
+  font-size: 0.85rem;
+  line-height: 1.75;
+}
+
+.code-label {
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  margin-bottom: var(--space-2);
+  display: block;
+}
+
+/* ============================================================
+   NOTA
+   ============================================================ */
+
+.note {
+  border-left: 2px solid var(--star-600);
+  background: var(--navy-800);
+  padding: var(--space-6);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  margin: var(--space-6) 0;
+}
+
+.note__label {
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--star-400);
+  display: block;
+  margin-bottom: var(--space-2);
+}
+
+.note p { font-size: 0.92rem; margin: 0; }
+
+/* Nota de regra: o par positivo/negativo. */
+.note--rule { border-left-color: var(--sun-700); }
+.note--rule .note__label { color: var(--sun-400); }
+
+/* ============================================================
+   PRÓXIMA PÁGINA
+   ============================================================ */
+
+.next {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-6);
+  margin-top: var(--space-24);
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--rule-sun);
+}
+
+.next__link {
+  font-family: var(--serif);
+  text-decoration: none;
+  color: var(--ink-500);
+  transition: color var(--t-normal) var(--ease);
+  max-width: 48%;
+}
+.next__link:hover { color: var(--sun-400); }
+.next__link:focus-visible {
+  outline: 2px solid var(--star-600);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+.next__link--fwd { margin-left: auto; text-align: right; }
+
+.next__dir {
+  display: block;
+  font-family: var(--sans);
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-700);
+  margin-bottom: var(--space-1);
+}
+
+.next__title { font-size: 1.05rem; color: var(--sun-400); }
+
+/* ============================================================
+   RODAPÉ
+   ============================================================ */
+
+footer {
+  border-top: 1px solid var(--rule-faint);
+  margin-top: var(--space-16);
+  padding-top: var(--space-8);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  font-size: 0.8rem;
+  color: var(--ink-500);
+}
+footer em { font-family: var(--serif); color: var(--sun-500); font-style: italic; }
+
+/* ============================================================
+   RESPONSIVO — espelha SPECS/07-ui.md
+   ============================================================ */
+
+@media (max-width: 1180px) {
+  :root { --rail-w: 208px; }
+  .shell { padding-left: var(--space-8); padding-right: var(--space-8); }
+}
+
+@media (max-width: 860px) {
+  /* O rail vira barra horizontal grudada no topo. */
+  .rail {
+    position: sticky;
+    inset: 0 0 auto 0;
+    width: auto;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--rule-sun);
+    padding: var(--space-4) 0 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .rail__brand {
+    padding: 0 var(--space-4) var(--space-4);
+    border-bottom: none;
+    margin-bottom: 0;
+    white-space: nowrap;
+    font-size: 1.05rem;
+  }
+
+  .rail__group { display: none; }
+
+  .rail__list { display: flex; gap: var(--space-2); }
+
+  .rail__link {
+    border-left: none;
+    border-bottom: 2px solid transparent;
+    padding: 0 var(--space-3) var(--space-4);
+    white-space: nowrap;
+    font-size: 0.9rem;
+  }
+  .rail__link[aria-current="page"] {
+    border-left-color: transparent;
+    border-bottom-color: var(--sun-500);
+  }
+
+  .main { margin-left: 0; }
+  .shell { padding: var(--space-16) var(--space-6); }
+  .section { margin-bottom: var(--space-16); }
+  .next { flex-direction: column; }
+  .next__link, .next__link--fwd { max-width: 100%; text-align: left; margin-left: 0; }
+}
+
+/* ============================================================
+   MOVIMENTO REDUZIDO
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .card:hover { transform: none; }
+}

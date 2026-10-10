@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Ateliê de programas livres de Filipe Caporali de Andrade: Beholder, Sunna, Janus e Dedup.">
+<title>La Bottega Caporali de Andrade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   LA BOTTEGA CAPORALI DE ANDRADE
+   Penumbra de pergaminho queimado · ouro de folha aplicada
+   Tokens canônicos em MASTER.md. Nenhum valor solto.
+   ============================================================ */
+
+:root {
+  /* — Pergaminho queimado — */
+  --ground:    #241C14;
+  --ground-2:  #1C1610;
+  --surface:   #332618;
+  --surface-2: #3F2F1E;
+
+  /* — Ouro de folha — */
+  --gold:        #C9A227;
+  --gold-bright: #E8C65C;
+  --gold-deep:   #AD8A27;
+
+  /* — Tinta ferrogálica — */
+  --sepia: #C19B63;
+
+  /* — Tinta — */
+  --ink:   #EDE3D0;
+  --ink-2: #CDBFA6;
+  --ink-3: #A3957E;
+  --ink-4: #9A8D79;
+
+  /* — Filetes — */
+  --rule:       rgba(201, 162, 39, 0.26);
+  --rule-faint: rgba(201, 162, 39, 0.11);
+
+  /* — Espaço (base 8) — */
+  --s1: 4px;  --s2: 8px;   --s3: 12px;  --s4: 16px;
+  --s6: 24px; --s8: 32px;  --s12: 48px; --s16: 64px;
+  --s24: 96px; --s32: 128px; --s40: 160px;
+
+  /* — Raio — */
+  --r-sm: 2px; --r-md: 4px;
+
+  /* — Sombra — */
+  --sh-sm:   0 2px 10px rgba(0,0,0,0.34);
+  --sh-md:   0 10px 30px rgba(0,0,0,0.44);
+  --sh-gold: 0 0 36px rgba(201,162,39,0.16);
+
+  /* — Movimento: coisa pesada, que para com firmeza — */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --t-hover: 450ms;
+  --t-reveal: 900ms;
+  --t-draw: 1600ms;
+  --stagger: 90ms;
+
+  /* — Tipografia — */
+  --display: 'Cormorant Garamond', Georgia, 'Palatino Linotype', Palatino, serif;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --mono: 'SF Mono', 'Monaco', 'Cascadia Code', 'Courier New', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--ground);
+  color: var(--ink-2);
+  font-family: var(--sans);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* A textura do pergaminho: ruído sutilíssimo, puramente decorativo. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.5;
+  background-image:
+    radial-gradient(ellipse 90% 60% at 50% 0%, rgba(201,162,39,0.055), transparent 70%),
+    radial-gradient(ellipse 70% 50% at 50% 100%, rgba(143,114,32,0.05), transparent 70%);
+}
+
+.shell { max-width: 1180px; margin: 0 auto; padding: 0 var(--s12); position: relative; z-index: 2; }
+
+a { color: inherit; }
+
+::selection { background: rgba(201,162,39,0.26); color: var(--ink); }
+
+/* ============================================================
+   PULAR
+   ============================================================ */
+.skip {
+  position: absolute; left: -9999px; top: var(--s4); z-index: 100;
+  background: var(--surface); color: var(--gold-bright);
+  padding: var(--s3) var(--s6); border: 1px solid var(--rule);
+  font-family: var(--display); font-size: 1.05rem; text-decoration: none;
+}
+.skip:focus { left: var(--s6); }
+
+/* ============================================================
+   FRONTISPÍCIO
+   ============================================================ */
+
+.front {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--s24) var(--s12);
+  position: relative;
+  z-index: 2;
+}
+
+.emblem { width: min(230px, 46vw); height: auto; margin-bottom: var(--s8); }
+
+/* Cada traço do emblema se desenha. */
+.emblem [data-draw] {
+  stroke-dasharray: var(--len, 1200);
+  stroke-dashoffset: var(--len, 1200);
+  animation: draw var(--t-draw) var(--ease) forwards;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+.emblem [data-fade] {
+  opacity: 0;
+  animation: emblem-in 900ms var(--ease) forwards;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes emblem-in { to { opacity: 1; } }
+
+.front__rule {
+  width: 1px; height: var(--s16);
+  background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+  margin: 0 auto var(--s8);
+  transform-origin: top;
+  animation: grow-v 900ms var(--ease) 1100ms backwards;
+}
+@keyframes grow-v { from { transform: scaleY(0); opacity: 0; } }
+
+.front__kicker {
+  font-family: var(--sans);
+  font-size: 0.66rem; font-weight: 600;
+  letter-spacing: 0.44em; text-transform: uppercase;
+  color: var(--sepia);
+  margin-bottom: var(--s6);
+  text-indent: 0.44em;
+}
+
+.front__title {
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: clamp(2.6rem, 8.5vw, 6.4rem);
+  line-height: 0.96;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+}
+.front__title em {
+  display: block;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--gold-bright);
+  font-size: 0.72em;
+  margin-top: 0.1em;
+}
+
+.front__sub {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(1.1rem, 2.4vw, 1.5rem);
+  color: var(--ink-2);
+  max-width: 46ch;
+  margin: var(--s8) auto 0;
+  line-height: 1.6;
+}
+
+/* Entrada escalonada do frontispício. */
+.front__kicker, .front__title, .front__sub, .front__meta {
+  animation: rise 1100ms var(--ease) backwards;
+}
+.front__kicker { animation-delay: 1200ms; }
+.front__title  { animation-delay: 1340ms; }
+.front__sub    { animation-delay: 1500ms; }
+.front__meta   { animation-delay: 1660ms; }
+@keyframes rise { from { opacity: 0; transform: translateY(22px); } }
+
+.front__meta {
+  margin-top: var(--s16);
+  display: flex; flex-wrap: wrap; gap: var(--s8);
+  justify-content: center;
+  font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--ink-4);
+}
+.front__meta b { color: var(--sepia); font-weight: 600; }
+
+.front__scroll {
+  position: absolute; bottom: var(--s12); left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.62rem; letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--ink-4);
+  animation: rise 1100ms var(--ease) 2000ms backwards;
+}
+.front__scroll::after {
+  content: ''; display: block; width: 1px; height: var(--s8);
+  background: linear-gradient(to bottom, var(--gold-deep), transparent);
+  margin: var(--s3) auto 0;
+}
+
+/* ============================================================
+   REVELAÇÃO POR ROLAGEM
+   ============================================================ */
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity var(--t-reveal) var(--ease),
+              transform var(--t-reveal) var(--ease);
+  transition-delay: var(--delay, 0ms);
+}
+[data-reveal].is-in { opacity: 1; transform: none; }
+
+/* ============================================================
+   SEÇÃO
+   ============================================================ */
+
+.sec { padding: var(--s40) 0; position: relative; z-index: 2; }
+
+.sec__head { text-align: center; margin-bottom: var(--s24); }
+
+.sec__num {
+  font-family: var(--display);
+  font-size: 0.95rem; letter-spacing: 0.4em;
+  color: var(--gold-deep);
+  display: block; margin-bottom: var(--s4);
+}
+
+.sec__title {
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: clamp(1.9rem, 4.4vw, 3.1rem);
+  line-height: 1.12;
+  color: var(--ink);
+}
+
+.sec__lede {
+  font-family: var(--display);
+  font-style: italic; font-weight: 300;
+  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  color: var(--ink-2);
+  max-width: 54ch; margin: var(--s6) auto 0;
+  line-height: 1.65;
+}
+
+/* Ornamento: filete que cresce dos dois lados. */
+.orn {
+  display: flex; align-items: center; justify-content: center;
+  gap: var(--s4); color: var(--gold);
+  margin: var(--s16) auto;
+  max-width: 420px;
+}
+.orn::before, .orn::after {
+  content: ''; flex: 1; height: 1px; background: var(--rule);
+  transform: scaleX(0); transform-origin: var(--o, right);
+  transition: transform 1100ms var(--ease);
+}
+.orn::after { --o: left; }
+.orn.is-in::before, .orn.is-in::after { transform: scaleX(1); }
+.orn svg { width: 15px; height: 15px; opacity: 0.85; flex: none; }
+
+/* ============================================================
+   PRANCHAS — cada projeto, emoldurado
+   ============================================================ */
+
+.plates {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+  gap: var(--s12);
+}
+
+.plate {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: linear-gradient(170deg, var(--surface) 0%, var(--ground-2) 100%);
+  border: 1px solid var(--rule-faint);
+  padding: var(--s8);
+  position: relative;
+  transition: border-color var(--t-hover) var(--ease),
+              box-shadow var(--t-hover) var(--ease),
+              transform var(--t-hover) var(--ease);
+}
+
+/* A moldura interna: um segundo filete, recuado, como passe-partout. */
+.plate::before {
+  content: '';
+  position: absolute; inset: var(--s3);
+  border: 1px solid var(--rule-faint);
+  pointer-events: none;
+  transition: border-color var(--t-hover) var(--ease);
+}
+
+.plate:hover,
+.plate:focus-visible {
+  border-color: var(--rule);
+  box-shadow: var(--sh-md), var(--sh-gold);
+  transform: translateY(-5px);
+}
+.plate:hover::before,
+.plate:focus-visible::before { border-color: var(--rule); }
+
+.plate:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+.plate:active { transform: translateY(-2px); }
+
+.plate__art {
+  display: block; width: 100%; height: auto;
+  margin-bottom: var(--s6);
+}
+
+/* O desenho acende ao passar o ponteiro. */
+.plate__art .lum {
+  transition: stroke var(--t-hover) var(--ease),
+              opacity var(--t-hover) var(--ease);
+}
+.plate:hover .plate__art .lum,
+.plate:focus-visible .plate__art .lum { stroke: var(--gold-bright); opacity: 1; }
+
+.plate__art .halo {
+  opacity: 0;
+  transition: opacity var(--t-hover) var(--ease);
+}
+.plate:hover .plate__art .halo,
+.plate:focus-visible .plate__art .halo { opacity: 1; }
+
+.plate__rom {
+  font-family: var(--display);
+  font-size: 0.88rem; letter-spacing: 0.34em;
+  color: var(--gold-deep);
+  display: block; margin-bottom: var(--s2);
+}
+
+.plate__name {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 2rem;
+  line-height: 1.1;
+  color: var(--ink);
+  margin-bottom: var(--s1);
+  transition: color var(--t-hover) var(--ease);
+}
+.plate:hover .plate__name,
+.plate:focus-visible .plate__name { color: var(--gold-bright); }
+
+.plate__role {
+  font-family: var(--display);
+  font-style: italic; font-weight: 300;
+  font-size: 1.08rem;
+  color: var(--sepia);
+  margin-bottom: var(--s4);
+}
+
+.plate__desc { font-size: 0.93rem; color: var(--ink-2); margin-bottom: var(--s6); }
+
+.plate__foot {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: var(--s4);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--rule-faint);
+  font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.plate__enter { color: var(--gold); display: inline-flex; align-items: center; gap: var(--s2); }
+.plate__enter span {
+  display: inline-block;
+  transition: transform var(--t-hover) var(--ease);
+}
+.plate:hover .plate__enter span,
+.plate:focus-visible .plate__enter span { transform: translateX(5px); }
+
+.plate--pending { opacity: 0.74; }
+.plate--pending .plate__enter { color: var(--ink-4); }
+
+/* ============================================================
+   O OFÍCIO — texto corrido, duas colunas
+   ============================================================ */
+
+.craft { max-width: 920px; margin: 0 auto; }
+
+.craft__cols {
+  columns: 2;
+  column-gap: var(--s16);
+  font-size: 1rem;
+  color: var(--ink-2);
+}
+.craft__cols p { margin-bottom: var(--s4); break-inside: avoid; }
+.craft__cols p:first-child::first-letter {
+  float: left;
+  font-family: var(--display);
+  font-size: 4.4rem; line-height: 0.78; font-weight: 400;
+  color: var(--gold);
+  padding: 0.06em 0.1em 0 0;
+}
+.craft strong { color: var(--ink); font-weight: 600; }
+.craft em { color: var(--sepia); font-style: italic; }
+
+/* ============================================================
+   PRECEITOS — as regras do ateliê
+   ============================================================ */
+
+.tenets { max-width: 760px; margin: 0 auto; list-style: none; }
+
+.tenet {
+  display: grid;
+  grid-template-columns: var(--s16) 1fr;
+  gap: var(--s6);
+  padding: var(--s6) 0;
+  border-bottom: 1px solid var(--rule-faint);
+  align-items: baseline;
+}
+.tenet:last-child { border-bottom: none; }
+
+.tenet__n {
+  font-family: var(--display);
+  font-size: 1.5rem;
+  color: var(--gold-deep);
+  text-align: right;
+}
+
+.tenet__t {
+  font-family: var(--display);
+  font-size: 1.32rem;
+  color: var(--ink);
+  margin-bottom: var(--s1);
+}
+
+.tenet__d { font-size: 0.93rem; color: var(--ink-3); }
+
+/* ============================================================
+   COLOFÃO
+   ============================================================ */
+
+.colophon {
+  text-align: center;
+  padding: var(--s24) var(--s12) var(--s16);
+  border-top: 1px solid var(--rule-faint);
+  position: relative; z-index: 2;
+}
+
+.colophon__mark { width: 34px; height: 34px; color: var(--gold-deep); margin-bottom: var(--s6); }
+
+.colophon__name {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 1.35rem;
+  color: var(--sepia);
+  margin-bottom: var(--s2);
+}
+
+.colophon__line { font-size: 0.74rem; letter-spacing: 0.17em; text-transform: uppercase; color: var(--ink-4); }
+
+/* ============================================================
+   RESPONSIVO
+   ============================================================ */
+
+@media (max-width: 860px) {
+  .shell { padding: 0 var(--s6); }
+  .sec { padding: var(--s24) 0; }
+  .front { padding: var(--s16) var(--s6); }
+  .craft__cols { columns: 1; }
+  .plates { gap: var(--s8); }
+  .tenet { grid-template-columns: var(--s8) 1fr; gap: var(--s4); }
+  .tenet__n { font-size: 1.1rem; }
+  .front__meta { gap: var(--s4); }
+}
+
+/* ============================================================
+   MOVIMENTO REDUZIDO — tudo chega, nada se move
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+  [data-reveal] { opacity: 1; transform: none; }
+  .emblem [data-draw] { stroke-dashoffset: 0; }
+  .emblem [data-fade] { opacity: 1; }
+  .orn::before, .orn::after { transform: scaleX(1); }
+  .plate:hover, .plate:focus-visible { transform: none; }
+  .plate:hover .plate__enter span { transform: none; }
+}
+</style>
+</head>
+<body>
+
+<a class="skip" href="#pranchas">Pular para as pranchas</a>
+
+<!-- ══════════════════ FRONTISPÍCIO ══════════════════ -->
+<header class="front">
+
+  <svg class="emblem" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+    <!-- Rosa de oito pontas: a bússola do ofício -->
+    <g stroke="#C9A227" stroke-width="0.7" opacity="0.55">
+      <path data-draw style="--len:720;--d:120ms" d="M100 8 L100 192 M8 100 L192 100 M35 35 L165 165 M165 35 L35 165"/>
+    </g>
+
+    <!-- Anel externo -->
+    <circle data-draw style="--len:540;--d:0ms" cx="100" cy="100" r="86" stroke="#C9A227" stroke-width="1.1"/>
+    <circle data-draw style="--len:520;--d:200ms" cx="100" cy="100" r="81" stroke="#8F7220" stroke-width="0.6"/>
+
+    <!-- Entrelaçado: doze pétalas, geometria de compasso -->
+    <g stroke="#C9A227" stroke-width="0.65" opacity="0.72">
+      <circle data-draw style="--len:420;--d:340ms" cx="100" cy="100" r="66"/>
+      <circle data-draw style="--len:420;--d:420ms" cx="100" cy="66"  r="34"/>
+      <circle data-draw style="--len:420;--d:470ms" cx="129" cy="83"  r="34"/>
+      <circle data-draw style="--len:420;--d:520ms" cx="129" cy="117" r="34"/>
+      <circle data-draw style="--len:420;--d:570ms" cx="100" cy="134" r="34"/>
+      <circle data-draw style="--len:420;--d:620ms" cx="71"  cy="117" r="34"/>
+      <circle data-draw style="--len:420;--d:670ms" cx="71"  cy="83"  r="34"/>
+    </g>
+
+    <!-- Campo central -->
+    <circle data-fade style="--d:1000ms" cx="100" cy="100" r="40" fill="#241C14" opacity="0.94"/>
+    <circle data-draw style="--len:260;--d:900ms" cx="100" cy="100" r="40" stroke="#C9A227" stroke-width="0.9"/>
+
+    <!-- Monograma CA -->
+    <g data-fade style="--d:1240ms" fill="#E8C65C" font-family="Cormorant Garamond, Georgia, serif">
+      <text x="86" y="114" font-size="46" font-weight="300" text-anchor="middle">C</text>
+      <text x="115" y="114" font-size="46" font-weight="300" text-anchor="middle">A</text>
+    </g>
+
+    <!-- Quatro cravos nos pontos cardeais -->
+    <g data-fade style="--d:1400ms" fill="#C9A227">
+      <circle cx="100" cy="14" r="2.4"/>
+      <circle cx="186" cy="100" r="2.4"/>
+      <circle cx="100" cy="186" r="2.4"/>
+      <circle cx="14" cy="100" r="2.4"/>
+    </g>
+  </svg>
+
+  <div class="front__rule" aria-hidden="true"></div>
+
+  <p class="front__kicker">Ateliê de programas livres</p>
+
+  <h1 class="front__title">La Bottega<em>Caporali de Andrade</em></h1>
+
+  <p class="front__sub">Quatro ofícios em exposição. Cada peça traz consigo a especificação que a governa, a evidência que sustenta o que ela afirma, e a recusa explícita daquilo que escolheu não fazer.</p>
+
+  <div class="front__meta">
+    <span><b>IV</b> peças</span>
+    <span><b>Rust</b> &middot; <b>Go</b></span>
+    <span>Código <b>aberto</b></span>
+    <span>MMXXVI</span>
+  </div>
+
+  <p class="front__scroll" aria-hidden="true">Desça</p>
+</header>
+
+<!-- ══════════════════ AS PRANCHAS ══════════════════ -->
+<main>
+<section class="sec" id="pranchas">
+  <div class="shell">
+
+    <div class="sec__head" data-reveal>
+      <span class="sec__num">I</span>
+      <h2 class="sec__title">As pranchas</h2>
+      <p class="sec__lede">Cada uma abre a sua própria documentação — escrita a partir do código e das especificações, não do arquivo leia-me.</p>
+    </div>
+
+    <div class="plates">
+
+      <!-- ░░ BEHOLDER ░░ -->
+      <a class="plate" href="beholder/index.html" data-reveal style="--delay:0ms">
+        <svg class="plate__art" viewBox="0 0 400 180" fill="none" aria-hidden="true">
+          <circle class="halo" cx="200" cy="90" r="62" fill="#C9A227" opacity="0" style="filter:blur(26px)"/>
+          <!-- Olho central -->
+          <ellipse class="lum" cx="200" cy="90" rx="52" ry="32" stroke="#8F7220" stroke-width="1.2" opacity="0.8"/>
+          <circle class="lum" cx="200" cy="90" r="20" stroke="#C9A227" stroke-width="1.4" opacity="0.9"/>
+          <circle cx="200" cy="90" r="8" fill="#C9A227" opacity="0.85"/>
+          <!-- Pupila vertical -->
+          <path d="M200 76 Q203 90 200 104 Q197 90 200 76Z" fill="#241C14"/>
+          <!-- Olhos sentinelas, seis -->
+          <g class="lum" stroke="#8F7220" stroke-width="1" opacity="0.62">
+            <circle cx="92"  cy="54"  r="11"/><circle cx="60"  cy="104" r="9"/>
+            <circle cx="126" cy="136" r="8"/><circle cx="308" cy="54"  r="11"/>
+            <circle cx="340" cy="104" r="9"/><circle cx="274" cy="136" r="8"/>
+          </g>
+          <g fill="#C9A227" opacity="0.7">
+            <circle cx="92" cy="54" r="3"/><circle cx="60" cy="104" r="2.6"/>
+            <circle cx="126" cy="136" r="2.4"/><circle cx="308" cy="54" r="3"/>
+            <circle cx="340" cy="104" r="2.6"/><circle cx="274" cy="136" r="2.4"/>
+          </g>
+          <!-- Hastes -->
+          <g class="lum" stroke="#8F7220" stroke-width="0.7" opacity="0.42">
+            <path d="M150 76 Q120 62 101 56"/><path d="M150 96 Q110 102 69 104"/>
+            <path d="M163 112 Q145 128 133 134"/><path d="M250 76 Q280 62 299 56"/>
+            <path d="M250 96 Q290 102 331 104"/><path d="M237 112 Q255 128 267 134"/>
+          </g>
+        </svg>
+        <span class="plate__rom">I</span>
+        <h3 class="plate__name">Beholder</h3>
+        <p class="plate__role">Muitos olhos sobre um só sistema</p>
+        <p class="plate__desc">Monitor de processos para Linux. RSS, CPU e a VRAM da NVIDIA observados em janela contínua — para quem caça vazamentos onde eles se escondem.</p>
+        <div class="plate__foot">
+          <span>Rust &middot; egui &middot; MCP</span>
+          <span class="plate__enter">Entrar <span>&rarr;</span></span>
+        </div>
+      </a>
+
+      <!-- ░░ SUNNA ░░ -->
+      <a class="plate" href="sunna/index.html" data-reveal style="--delay:90ms">
+        <svg class="plate__art" viewBox="0 0 400 180" fill="none" aria-hidden="true">
+          <circle class="halo" cx="200" cy="86" r="54" fill="#E8C65C" opacity="0" style="filter:blur(30px)"/>
+          <!-- Sol -->
+          <circle class="lum" cx="200" cy="86" r="30" stroke="#C9A227" stroke-width="1.4"/>
+          <circle cx="200" cy="86" r="18" fill="#C9A227" opacity="0.3"/>
+          <g class="lum" stroke="#C9A227" stroke-width="1" opacity="0.76">
+            <path d="M200 42V28M200 144v-14M156 86h-14M258 86h14M169 55l-10-10M231 117l10 10M231 55l10-10M169 117l-10 10"/>
+          </g>
+          <!-- Constelação: a rede como teia de nós -->
+          <g class="lum" stroke="#8F7220" stroke-width="0.7" opacity="0.6">
+            <path d="M52 56 L104 96 L74 142 M104 96 L158 118 M296 56 L244 96 L276 142 M244 96 L198 128 M158 118 L198 128"/>
+            <path d="M52 56 L96 36 M296 56 L302 112 M74 142 L128 152"/>
+          </g>
+          <g fill="#C9A227" opacity="0.82">
+            <circle cx="52" cy="56" r="3.4"/><circle cx="104" cy="96" r="3"/>
+            <circle cx="74" cy="142" r="2.6"/><circle cx="158" cy="118" r="2.4"/>
+            <circle cx="96" cy="36" r="2.2"/><circle cx="128" cy="152" r="2.2"/>
+            <circle cx="296" cy="56" r="3.4"/><circle cx="244" cy="96" r="3"/>
+            <circle cx="276" cy="142" r="2.6"/><circle cx="198" cy="128" r="2.4"/>
+            <circle cx="302" cy="112" r="2.2"/>
+          </g>
+        </svg>
+        <span class="plate__rom">II</span>
+        <h3 class="plate__name">Sunna</h3>
+        <p class="plate__role">A evidência ao lado da conclusão</p>
+        <p class="plate__desc">Mapa da rede local e dos serviços desta máquina. Regras nomeadas derivam achados, e nenhum achado aparece sem o fato que o produziu.</p>
+        <div class="plate__foot">
+          <span>Rust &middot; egui &middot; Tauri</span>
+          <span class="plate__enter">Entrar <span>&rarr;</span></span>
+        </div>
+      </a>
+
+      <!-- ░░ JANUS ░░ -->
+      <a class="plate" href="janus/index.html" data-reveal style="--delay:180ms">
+        <svg class="plate__art" viewBox="0 0 400 180" fill="none" aria-hidden="true">
+          <circle class="halo" cx="200" cy="90" r="56" fill="#C9A227" opacity="0" style="filter:blur(28px)"/>
+          <!-- Medalhão -->
+          <circle class="lum" cx="200" cy="90" r="56" stroke="#C9A227" stroke-width="1.3"/>
+          <circle class="lum" cx="200" cy="90" r="50" stroke="#8F7220" stroke-width="0.6" opacity="0.7"/>
+          <!-- Jano: duas faces opostas, de perfil -->
+          <g class="lum" stroke="#C9A227" stroke-width="1.2" opacity="0.9">
+            <path d="M196 56 q-20 2 -26 20 q-4 12 2 22 q-6 4 -2 8 q4 3 2 8 q-2 8 6 10 l18 2"/>
+            <path d="M204 56 q20 2 26 20 q4 12 -2 22 q6 4 2 8 q-4 3 -2 8 q2 8 -6 10 l-18 2"/>
+          </g>
+          <!-- Eixo -->
+          <path d="M200 50 V130" stroke="#8F7220" stroke-width="0.6" opacity="0.6"/>
+          <g fill="#C9A227" opacity="0.8">
+            <circle cx="186" cy="82" r="2.4"/><circle cx="214" cy="82" r="2.4"/>
+          </g>
+          <!-- Chaves cruzadas sob o medalhão -->
+          <g class="lum" stroke="#8F7220" stroke-width="0.9" opacity="0.6">
+            <path d="M116 132 l40 -26 M156 106 l8 -5 M160 114 l8 -5"/>
+            <circle cx="110" cy="136" r="7"/>
+            <path d="M284 132 l-40 -26 M244 106 l-8 -5 M240 114 l-8 -5"/>
+            <circle cx="290" cy="136" r="7"/>
+          </g>
+        </svg>
+        <span class="plate__rom">III</span>
+        <h3 class="plate__name">Janus</h3>
+        <p class="plate__role">Prova quem você é, e nada mais</p>
+        <p class="plate__desc">Serviço de identidade por JWT. Sem papéis, sem permissões, sem redirecionamento — a autorização pertence a quem consome o token.</p>
+        <div class="plate__foot">
+          <span>Go &middot; Gin &middot; Postgres</span>
+          <span class="plate__enter">Entrar <span>&rarr;</span></span>
+        </div>
+      </a>
+
+      <!-- ░░ DEDUP ░░ -->
+      <a class="plate" href="dedup/index.html" data-reveal style="--delay:270ms">
+        <svg class="plate__art" viewBox="0 0 400 180" fill="none" aria-hidden="true">
+          <circle class="halo" cx="268" cy="90" r="46" fill="#C9A227" opacity="0" style="filter:blur(26px)"/>
+          <!-- Pilha de cópias idênticas, à esquerda -->
+          <g class="lum" stroke="#8F7220" stroke-width="0.9" opacity="0.5">
+            <rect x="60"  y="44" width="54" height="72" rx="1"/>
+            <rect x="76"  y="50" width="54" height="72" rx="1"/>
+            <rect x="92"  y="56" width="54" height="72" rx="1"/>
+            <rect x="108" y="62" width="54" height="72" rx="1"/>
+          </g>
+          <!-- Setas de convergência -->
+          <g class="lum" stroke="#8F7220" stroke-width="0.7" opacity="0.55">
+            <path d="M174 70 h38 M174 90 h38 M174 110 h38"/>
+            <path d="M206 64 l8 6 -8 6 M206 84 l8 6 -8 6 M206 104 l8 6 -8 6"/>
+          </g>
+          <!-- O canônico: um só, rubricado -->
+          <rect class="lum" x="240" y="48" width="58" height="78" rx="1" stroke="#C9A227" stroke-width="1.4"/>
+          <g stroke="#C9A227" stroke-width="0.8" opacity="0.5">
+            <path d="M252 68 h34 M252 80 h34 M252 92 h22"/>
+          </g>
+          <!-- A rubrica: a marca do que fica -->
+          <path d="M254 108 q8 -10 16 -2 q6 6 14 -4" stroke="#B4543C" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="269" cy="36" r="4" fill="#B4543C" opacity="0.9"/>
+        </svg>
+        <span class="plate__rom">IV</span>
+        <h3 class="plate__name">Dedup</h3>
+        <p class="plate__role">Duplicata é identidade de bytes</p>
+        <p class="plate__desc">Deduplicador exato por BLAKE3. Nada de semelhança, nada de palpite — e toda ação que destrói começa recusando-se a agir.</p>
+        <div class="plate__foot">
+          <span>Go &middot; BLAKE3</span>
+          <span class="plate__enter">Entrar <span>&rarr;</span></span>
+        </div>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ O OFÍCIO ══════════════════ -->
+<section class="sec">
+  <div class="shell">
+
+    <div class="orn" data-reveal aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 1 L15 9 L23 12 L15 15 L12 23 L9 15 L1 12 L9 9 Z" stroke="currentColor" stroke-width="1.1"/></svg>
+    </div>
+
+    <div class="sec__head" data-reveal>
+      <span class="sec__num">II</span>
+      <h2 class="sec__title">O ofício</h2>
+    </div>
+
+    <div class="craft" data-reveal>
+      <div class="craft__cols">
+        <p>Uma bottega renascentista não era um estúdio de gênio solitário: era oficina, com método, aprendizes e regras de ofício que vinham antes do talento. O desenho precedia a tinta. A proporção precedia o desenho. E o mestre respondia pela peça que saía porta afora.</p>
+        <p>Estes quatro programas seguem a mesma ordem. Cada um tem sua <strong>especificação canônica</strong> — documentos que valem mais do que aquilo que o código porventura esteja fazendo. Quando o comportamento muda, código e especificação mudam no mesmo commit. Não há peça que contradiga o seu desenho.</p>
+        <p>Nenhum deles é grande. Nenhum deles quer ser plataforma. Cada um resolve um problema que o autor realmente teve, e a documentação que você encontra aqui foi escrita a partir do código e das especificações — <em>nunca</em> a partir do arquivo leia-me, que costuma contar menos da metade.</p>
+        <p>O que os une não é a linguagem, que varia, nem o domínio, que não se toca. É a recusa em afirmar aquilo que não se pode sustentar: uma porta cujo serviço não foi confirmado permanece <em>não identificada</em>, um PID inacessível permanece <em>requer root</em>, e um gráfico de memória nunca interpola o ponto que não mediu.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ PRECEITOS ══════════════════ -->
+<section class="sec">
+  <div class="shell">
+
+    <div class="orn" data-reveal aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 1 L15 9 L23 12 L15 15 L12 23 L9 15 L1 12 L9 9 Z" stroke="currentColor" stroke-width="1.1"/></svg>
+    </div>
+
+    <div class="sec__head" data-reveal>
+      <span class="sec__num">III</span>
+      <h2 class="sec__title">Preceitos da casa</h2>
+      <p class="sec__lede">Valem para as quatro peças, e são o motivo de elas se parecerem apesar de não terem nada em comum.</p>
+    </div>
+
+    <ol class="tenets">
+      <li class="tenet" data-reveal style="--delay:0ms">
+        <span class="tenet__n">I</span>
+        <div>
+          <h3 class="tenet__t">A especificação é canônica</h3>
+          <p class="tenet__d">O documento vale mais do que o código. Quando divergem, é o código que está errado — e os dois mudam no mesmo commit.</p>
+        </div>
+      </li>
+      <li class="tenet" data-reveal style="--delay:60ms">
+        <span class="tenet__n">II</span>
+        <div>
+          <h3 class="tenet__t">Nada se afirma sem evidência</h3>
+          <p class="tenet__d">Toda conclusão carrega os fatos que a produziram. Palpite com cara de fato é pior que lacuna declarada.</p>
+        </div>
+      </li>
+      <li class="tenet" data-reveal style="--delay:120ms">
+        <span class="tenet__n">III</span>
+        <div>
+          <h3 class="tenet__t">A ausência tem nome</h3>
+          <p class="tenet__d">Seção vazia sem explicação comunica <em>nada aqui</em> quando a verdade é <em>não foi possível olhar</em>. As duas coisas são distintas e dizem-se por extenso.</p>
+        </div>
+      </li>
+      <li class="tenet" data-reveal style="--delay:180ms">
+        <span class="tenet__n">IV</span>
+        <div>
+          <h3 class="tenet__t">O destrutivo recusa-se primeiro</h3>
+          <p class="tenet__d">Toda ação irreversível nasce em modo de ensaio e exige confirmação explícita para sair dele. A proteção é a recusa, não o desfazer.</p>
+        </div>
+      </li>
+      <li class="tenet" data-reveal style="--delay:240ms">
+        <span class="tenet__n">V</span>
+        <div>
+          <h3 class="tenet__t">Um binário, um processo</h3>
+          <p class="tenet__d">Sem auxiliar em outra linguagem, sem protocolo interno entre partes do mesmo programa. O que é uma coisa só se instala como uma coisa só.</p>
+        </div>
+      </li>
+      <li class="tenet" data-reveal style="--delay:300ms">
+        <span class="tenet__n">VI</span>
+        <div>
+          <h3 class="tenet__t">O teste existente é imutável</h3>
+          <p class="tenet__d">Teste que passava e passou a incomodar não se reescreve: ou o código volta a respeitá-lo, ou a especificação muda antes, por escrito.</p>
+        </div>
+      </li>
+    </ol>
+  </div>
+</section>
+</main>
+
+<!-- ══════════════════ COLOFÃO ══════════════════ -->
+<footer class="colophon">
+  <svg class="colophon__mark" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+    <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="0.9"/>
+    <circle cx="20" cy="20" r="13" stroke="currentColor" stroke-width="0.5" opacity="0.6"/>
+    <path d="M20 4 L20 36 M4 20 L36 20" stroke="currentColor" stroke-width="0.5" opacity="0.4"/>
+    <circle cx="20" cy="20" r="4" fill="currentColor" opacity="0.8"/>
+  </svg>
+  <p class="colophon__name">La Bottega Caporali de Andrade</p>
+  <p class="colophon__line">Composto em Cormorant Garamond &middot; MMXXVI &middot; Licença MIT</p>
+</footer>
+
+<script>
+/* ============================================================
+   Revelação por rolagem.
+   Uma só responsabilidade: marcar o elemento quando ele entra
+   em cena, e parar de observá-lo. O escalonamento vem do CSS,
+   pela variável --delay, para que a cascata continue sendo
+   uma decisão de estilo e não de script.
+   ============================================================ */
+(function () {
+  var alvos = document.querySelectorAll('[data-reveal], .orn');
+  if (!alvos.length) return;
+
+  /* Sem IntersectionObserver, tudo entra visível: a página nunca
+     depende da animação para ser legível. */
+  if (!('IntersectionObserver' in window)) {
+    alvos.forEach(function (el) { el.classList.add('is-in'); });
+    return;
+  }
+
+  var obs = new IntersectionObserver(function (entradas) {
+    entradas.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      e.target.classList.add('is-in');
+      obs.unobserve(e.target);
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.12 });
+
+  alvos.forEach(function (el) { obs.observe(el); });
+})();
+</script>
+
+</body>
+</html>

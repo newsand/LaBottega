@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dedup — Documentação</title>
+<style>
+/* ============================================================
+   DEDUP — Design System
+   Tokens canônicos em MASTER.md. Nenhum valor solto aqui.
+   Irmão do Beholder e da Sunna: mesma gramática.
+   O acento é o carmim de rubrica — a tinta com que o
+   rubricador medieval marcava, no manuscrito, o que importava.
+   ============================================================ */
+
+:root {
+  /* — Fundo — */
+  --ground-900: #0E0F18;
+  --ground-800: #14161F;
+  --ground-700: #1B1E29;
+  --ground-600: #252936;
+
+  /* — Ouro: títulos, interação — */
+  --gold-300: #EBD9BC;
+  --gold-400: #D9B382;
+  --gold-500: #C79A5E;
+  --gold-700: #8F6D40;
+
+  /* — Carmim de rubrica: o que é marcado — */
+  --rubric-400: #C96A62;
+  --rubric-500: #B04A42;
+  --rubric-700: #7E332D;
+
+  /* — Pedra: estrutura, numeração — */
+  --stone-400: #9AA6B8;
+  --stone-600: #6B7585;
+
+  /* — Tinta — */
+  --ink-100: #EFEADF;
+  --ink-300: #C6BFB1;
+  --ink-500: #8A8476;
+  --ink-700: #57524A;
+
+  /* — Filetes — */
+  --rule-gold: rgba(199, 154, 94, 0.30);
+  --rule-faint: rgba(199, 154, 94, 0.13);
+
+  /* — Espaçamento (base 8) — */
+  --space-1: 4px;  --space-2: 8px;   --space-3: 12px;
+  --space-4: 16px; --space-6: 24px;  --space-8: 32px;
+  --space-12: 48px; --space-16: 64px; --space-24: 96px;
+
+  /* — Raio — */
+  --radius-sm: 3px; --radius-md: 6px; --radius-lg: 10px;
+
+  /* — Sombra — */
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.32);
+  --shadow-md: 0 6px 20px rgba(0,0,0,0.42);
+  --shadow-gold: 0 0 24px rgba(199,154,94,0.15);
+
+  /* — Movimento — */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --t-fast: 150ms; --t-normal: 250ms; --t-slow: 350ms;
+
+  /* — Tipografia — */
+  --serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Times New Roman', serif;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --mono: 'SF Mono', 'Monaco', 'Cascadia Code', 'Courier New', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--ground-900);
+  color: var(--ink-300);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   ESTAMPA DE ABERTURA
+   ============================================================ */
+
+.hero {
+  position: relative;
+  border-bottom: 1px solid var(--rule-gold);
+  background: var(--ground-900);
+}
+
+.hero__plate {
+  position: relative;
+  width: 100%;
+  max-width: min(1180px, 96vh);
+  margin: 0 auto;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+}
+
+/* A estampa é gravura vetorial, não fotografia: desenhada em SVG
+   no próprio documento, na mesma linguagem do emblema do ateliê.
+   Escala sem perder traço e pesa alguns quilobytes. */
+.hero__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Os traços se desenham na abertura, um grupo por vez. */
+.hero__image [data-draw] {
+  stroke-dasharray: var(--len, 900);
+  stroke-dashoffset: var(--len, 900);
+  animation: engrave 1800ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes engrave { to { stroke-dashoffset: 0; } }
+
+.hero__image [data-ink] {
+  opacity: 0;
+  animation: ink-in 700ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes ink-in { to { opacity: 1; } }
+
+.hero__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, var(--ground-900) 0%, transparent 10%, transparent 74%, rgba(14,15,24,0.72) 92%, var(--ground-900) 100%),
+    linear-gradient(to right, var(--ground-900) 0%, transparent 9%, transparent 91%, var(--ground-900) 100%);
+}
+
+.hero__content {
+  position: relative;
+  width: 100%;
+  max-width: 1180px;
+  margin: calc(var(--space-16) * -1) auto 0;
+  padding: 0 var(--space-12) var(--space-16);
+}
+
+.hero__eyebrow {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--stone-400);
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.hero__eyebrow::after {
+  content: '';
+  flex: 1;
+  max-width: 180px;
+  height: 1px;
+  background: linear-gradient(to right, var(--stone-600), transparent);
+}
+
+.hero__title {
+  font-family: var(--serif);
+  font-size: clamp(2.4rem, 5.5vw, 3.8rem);
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--gold-300);
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 40px rgba(14,15,24,0.95);
+  margin-bottom: var(--space-4);
+}
+
+.hero__subtitle {
+  font-family: var(--serif);
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  font-style: italic;
+  color: var(--ink-300);
+  max-width: 58ch;
+  line-height: 1.55;
+  text-shadow: 0 1px 20px rgba(14,15,24,0.9);
+}
+
+.hero__meta {
+  margin-top: var(--space-8);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--rule-gold);
+}
+
+.hero__meta-label {
+  display: block;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  margin-bottom: var(--space-1);
+}
+
+.hero__meta-value {
+  font-family: var(--serif);
+  color: var(--gold-400);
+  font-size: 0.98rem;
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+
+.shell { max-width: 1180px; margin: 0 auto; padding: 0 var(--space-12); }
+
+/* ============================================================
+   ABAS
+   ============================================================ */
+
+.tabs {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(14, 15, 24, 0.93);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule-gold);
+}
+
+.tabs__inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 var(--space-12);
+  display: flex;
+  gap: var(--space-8);
+}
+
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: var(--space-6) var(--space-2) calc(var(--space-6) - 2px);
+  font-family: var(--serif);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink-500);
+  cursor: pointer;
+  transition: color var(--t-normal) var(--ease),
+              border-color var(--t-normal) var(--ease);
+  letter-spacing: 0.02em;
+}
+
+.tab:hover { color: var(--gold-400); }
+.tab:focus-visible {
+  outline: 2px solid var(--stone-600);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+.tab:active { color: var(--gold-500); }
+.tab[aria-selected="true"] {
+  color: var(--gold-500);
+  border-bottom-color: var(--gold-500);
+}
+.tab:disabled { color: var(--ink-700); cursor: not-allowed; }
+
+.panel { display: none; padding: var(--space-24) 0; }
+.panel[data-active="true"] {
+  display: block;
+  animation: panel-enter var(--t-slow) var(--ease);
+}
+
+@keyframes panel-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   TIPOGRAFIA
+   ============================================================ */
+
+h2 {
+  font-family: var(--serif);
+  font-size: clamp(1.9rem, 3.5vw, 2.6rem);
+  font-weight: 700;
+  color: var(--gold-300);
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  margin-bottom: var(--space-6);
+}
+
+h3 {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--gold-400);
+  margin: var(--space-12) 0 var(--space-4);
+}
+
+h4 {
+  font-family: var(--sans);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gold-400);
+  margin-bottom: var(--space-2);
+}
+
+p { margin-bottom: var(--space-4); max-width: 72ch; }
+p:last-child { margin-bottom: 0; }
+
+strong { color: var(--ink-100); font-weight: 600; }
+em { color: var(--gold-400); }
+
+/* A rubrica: o vermelho que marca o que não se desfaz. */
+.rubric { color: var(--rubric-400); font-style: normal; font-weight: 600; }
+
+.lede {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  line-height: 1.65;
+  color: var(--ink-100);
+  max-width: 68ch;
+}
+
+.lede::first-letter {
+  float: left;
+  font-family: var(--serif);
+  font-size: 4.2rem;
+  line-height: 0.82;
+  font-weight: 700;
+  color: var(--rubric-500);
+  padding: var(--space-2) var(--space-3) 0 0;
+}
+
+/* ============================================================
+   SEÇÃO E ORNAMENTO
+   ============================================================ */
+
+.section { margin-bottom: var(--space-24); }
+.section:last-child { margin-bottom: 0; }
+
+.section__head {
+  margin-bottom: var(--space-12);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--rule-gold);
+}
+
+.section__number {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--stone-400);
+  display: block;
+  margin-bottom: var(--space-3);
+}
+
+.ornament {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: var(--space-16) 0;
+  color: var(--gold-500);
+  opacity: 0.55;
+}
+.ornament::before, .ornament::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rule-gold);
+}
+.ornament span { font-size: 0.9rem; letter-spacing: 0.4em; }
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-6);
+}
+
+.card {
+  background: var(--ground-800);
+  border: 1px solid var(--rule-faint);
+  border-left: 2px solid var(--gold-500);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  transition: border-color var(--t-normal) var(--ease),
+              box-shadow var(--t-normal) var(--ease),
+              transform var(--t-normal) var(--ease);
+}
+
+.card:hover {
+  border-color: var(--rule-gold);
+  border-left-color: var(--gold-400);
+  box-shadow: var(--shadow-md), var(--shadow-gold);
+  transform: translateY(-3px);
+}
+
+/* Card de ação destrutiva: filete em rubrica. */
+.card--destructive { border-left-color: var(--rubric-500); }
+.card--destructive:hover { border-left-color: var(--rubric-400); }
+
+.card p { font-size: 0.92rem; color: var(--ink-300); margin: 0; }
+
+/* ============================================================
+   TABELAS
+   ============================================================ */
+
+.table-wrap { overflow-x: auto; margin: var(--space-6) 0; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  min-width: 480px;
+}
+
+thead th {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--stone-400);
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--rule-gold);
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--rule-faint);
+  vertical-align: top;
+}
+
+tbody tr { transition: background var(--t-fast) var(--ease); }
+tbody tr:hover { background: var(--ground-800); }
+tbody tr:last-child td { border-bottom: none; }
+
+td:first-child {
+  font-family: var(--serif);
+  color: var(--gold-400);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   CÓDIGO
+   ============================================================ */
+
+code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  color: var(--stone-400);
+  background: var(--ground-700);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+pre {
+  background: var(--ground-800);
+  border: 1px solid var(--rule-faint);
+  border-left: 2px solid var(--stone-600);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  overflow-x: auto;
+  margin: var(--space-4) 0;
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  color: var(--ink-300);
+  font-size: 0.85rem;
+  line-height: 1.75;
+}
+
+.code-label {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  margin-bottom: var(--space-2);
+  display: block;
+}
+
+/* ============================================================
+   NOTA
+   ============================================================ */
+
+.note {
+  border-left: 2px solid var(--stone-600);
+  background: var(--ground-800);
+  padding: var(--space-6);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  margin: var(--space-6) 0;
+}
+
+/* Advertência: a nota que trata do irreversível. */
+.note--warn { border-left-color: var(--rubric-500); }
+.note--warn .note__label { color: var(--rubric-400); }
+
+.note__label {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--stone-400);
+  display: block;
+  margin-bottom: var(--space-2);
+}
+
+.note p { font-size: 0.92rem; margin: 0; }
+
+/* ============================================================
+   RODAPÉ
+   ============================================================ */
+
+footer {
+  border-top: 1px solid var(--rule-gold);
+  padding: var(--space-12) 0;
+  margin-top: var(--space-24);
+}
+
+.footer__inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 var(--space-12);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  font-size: 0.8rem;
+  color: var(--ink-500);
+}
+
+.footer__inner em {
+  font-family: var(--serif);
+  color: var(--gold-500);
+  font-style: italic;
+}
+
+/* ============================================================
+   RESPONSIVO
+   ============================================================ */
+
+@media (max-width: 860px) {
+  .shell, .tabs__inner, .hero__content, .footer__inner {
+    padding-left: var(--space-6); padding-right: var(--space-6);
+  }
+  .panel { padding: var(--space-16) 0; }
+  .section { margin-bottom: var(--space-16); }
+  .tabs__inner { gap: var(--space-6); }
+  .hero__content { margin-top: calc(var(--space-8) * -1); }
+}
+
+/* ============================================================
+   MOVIMENTO REDUZIDO
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .card:hover { transform: none; }
+  .panel[data-active="true"] { animation: none; }
+  /* A gravura chega pronta, sem se desenhar. */
+  .hero__image [data-draw] { stroke-dashoffset: 0; }
+  .hero__image [data-ink] { opacity: 1; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ ESTAMPA ══════════════════ -->
+<header class="hero">
+  <div class="hero__plate">
+    <svg class="hero__image" viewBox="0 0 900 600" fill="none"
+         role="img"
+         aria-label="Gravura: um compasso aberto mede duas folhas idênticas; à esquerda, uma pilha de cópias sobrepostas converge por um feixe de setas até uma única folha à direita, marcada com um traço de rubrica em carmim">
+
+      <!-- ░░ Moldura dupla, com cravos nos cantos ░░ -->
+      <g stroke="var(--gold-700)" stroke-width="1">
+        <rect data-draw style="--len:2560;--d:0ms"   x="36" y="36" width="828" height="528"/>
+        <rect data-draw style="--len:2480;--d:140ms" x="48" y="48" width="804" height="504" stroke="var(--rule-gold)" stroke-width="0.6"/>
+      </g>
+      <g data-ink style="--d:1500ms" fill="var(--gold-500)" opacity="0.8">
+        <circle cx="36" cy="36" r="3"/><circle cx="864" cy="36" r="3"/>
+        <circle cx="36" cy="564" r="3"/><circle cx="864" cy="564" r="3"/>
+      </g>
+
+      <!-- ░░ O compasso: a medida exata ░░
+           A charneira fica na mediatriz entre as duas pontas, de modo
+           que as pernas tenham o mesmo comprimento — 285 unidades cada.
+           Uma ponta pousa na pilha, a outra no canônico: o instrumento
+           está medindo que as duas são a mesma coisa. -->
+      <g data-draw style="--len:640;--d:320ms" stroke="var(--gold-500)" stroke-width="1.7" stroke-linecap="round">
+        <path d="M410 93 L232 316 M410 93 L635 268"/>
+      </g>
+      <g data-ink style="--d:1240ms">
+        <circle cx="410" cy="93" r="8" fill="var(--ground-900)" stroke="var(--gold-400)" stroke-width="1.7"/>
+        <circle cx="410" cy="93" r="2.6" fill="var(--gold-400)"/>
+        <path d="M232 316 l10 -7 l-3 11 z" fill="var(--gold-400)"/>
+        <path d="M635 268 l-11 -4 l4 10 z" fill="var(--gold-400)"/>
+      </g>
+      <!-- O arco que o compasso descreve entre as duas pontas:
+           a igualdade sendo verificada, não afirmada. -->
+      <path data-draw style="--len:520;--d:700ms" d="M232 316 Q430 430 635 268"
+            stroke="var(--rule-gold)" stroke-width="0.9" stroke-dasharray="5 6"/>
+
+      <!-- ░░ Pilha de cópias: cinco folhas, idênticas, à esquerda ░░ -->
+      <g stroke="var(--gold-700)" stroke-width="1" opacity="0.55">
+        <rect data-draw style="--len:540;--d:700ms" x="108" y="268" width="104" height="142" rx="1"/>
+        <rect data-draw style="--len:540;--d:760ms" x="126" y="280" width="104" height="142" rx="1"/>
+        <rect data-draw style="--len:540;--d:820ms" x="144" y="292" width="104" height="142" rx="1"/>
+        <rect data-draw style="--len:540;--d:880ms" x="162" y="304" width="104" height="142" rx="1"/>
+      </g>
+      <rect data-draw style="--len:540;--d:940ms" x="180" y="316" width="104" height="142" rx="1"
+            stroke="var(--gold-500)" stroke-width="1.1"/>
+      <g data-ink style="--d:1600ms" stroke="var(--gold-700)" stroke-width="0.8" opacity="0.5">
+        <path d="M196 346 h72 M196 364 h72 M196 382 h48"/>
+      </g>
+
+      <!-- ░░ O feixe: convergência ░░ -->
+      <g stroke="var(--stone-600)" stroke-width="0.9" opacity="0.7">
+        <path data-draw style="--len:220;--d:1040ms" d="M310 330 L470 360"/>
+        <path data-draw style="--len:200;--d:1080ms" d="M310 364 L470 366"/>
+        <path data-draw style="--len:220;--d:1120ms" d="M310 398 L470 372"/>
+      </g>
+      <g data-ink style="--d:1720ms" fill="var(--stone-400)" opacity="0.85">
+        <path d="M470 360 l-13 -5 l1 10 z"/>
+        <path d="M470 366 l-13 -4 l0 8 z"/>
+        <path d="M470 372 l-13 1 l1 -10 z"/>
+      </g>
+
+      <!-- ░░ O canônico: um só, maior, rubricado ░░ -->
+      <rect data-draw style="--len:700;--d:1180ms" x="560" y="268" width="150" height="200" rx="1"
+            stroke="var(--gold-400)" stroke-width="1.8"/>
+      <g data-ink style="--d:1800ms" stroke="var(--gold-500)" stroke-width="0.9" opacity="0.55">
+        <path d="M588 310 h94 M588 334 h94 M588 358 h94 M588 382 h58"/>
+      </g>
+
+      <!-- A rubrica: o traço de carmim com que o rubricador marcava
+           o que não era texto comum. Aqui marca o que fica. -->
+      <path data-draw style="--len:150;--d:2100ms" d="M590 418 q20 -24 42 -6 q16 14 38 -10"
+            stroke="var(--rubric-500)" stroke-width="3.2" stroke-linecap="round"/>
+      <circle data-ink style="--d:2400ms" cx="635" cy="246" r="6" fill="var(--rubric-500)"/>
+
+      <!-- ░░ Legenda gravada no rodapé da estampa ░░ -->
+      <g data-ink style="--d:2300ms" fill="var(--ink-500)"
+         font-family="Georgia, serif" font-style="italic" font-size="17" text-anchor="middle">
+        <text x="450" y="520">idem per idem</text>
+      </g>
+      <g data-ink style="--d:2300ms" stroke="var(--rule-faint)" stroke-width="1">
+        <path d="M300 506 h86 M514 506 h86"/>
+      </g>
+    </svg>
+    <div class="hero__veil" aria-hidden="true"></div>
+  </div>
+  <div class="hero__content">
+    <p class="hero__eyebrow">Deduplicador exato &middot; CLI</p>
+    <h1 class="hero__title">Dedup</h1>
+    <p class="hero__subtitle">Duplicata é só o que tem os mesmos bytes. Nada de semelhança, nada de palpite — e toda ação que destrói começa recusando-se a agir.</p>
+
+    <div class="hero__meta">
+      <div>
+        <span class="hero__meta-label">Linguagem</span>
+        <span class="hero__meta-value">Go 1.25+</span>
+      </div>
+      <div>
+        <span class="hero__meta-label">Hash</span>
+        <span class="hero__meta-value">BLAKE3</span>
+      </div>
+      <div>
+        <span class="hero__meta-label">Plataforma</span>
+        <span class="hero__meta-value">Linux &middot; Windows</span>
+      </div>
+      <div>
+        <span class="hero__meta-label">Licença</span>
+        <span class="hero__meta-value">MIT</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════ ABAS ══════════════════ -->
+<nav class="tabs" aria-label="Formato da documentação">
+  <div class="tabs__inner" role="tablist">
+    <button class="tab" role="tab" id="tab-dev" aria-controls="panel-dev" aria-selected="true" data-target="dev">Para humanos</button>
+    <button class="tab" role="tab" id="tab-ai" aria-controls="panel-ai" aria-selected="false" data-target="ai">Para agentes</button>
+  </div>
+</nav>
+
+<main class="shell">
+
+<!-- ══════════════════ PAINEL: HUMANOS ══════════════════ -->
+<section class="panel" id="panel-dev" role="tabpanel" aria-labelledby="tab-dev" data-active="true">
+
+  <div class="section">
+    <p class="lede">Dedup percorre as pastas que você aponta, agrupa os arquivos por tamanho, calcula BLAKE3 só de quem tem companhia nesse tamanho, e escolhe um de cada grupo para ser o canônico. Os outros são cópias. O que fazer com elas é escolha sua — e toda escolha destrutiva começa em modo de ensaio, sem tocar em disco.</p>
+  </div>
+
+  <div class="ornament" aria-hidden="true"><span>&#10070;</span></div>
+
+  <!-- COMANDOS -->
+  <div class="section">
+    <div class="section__head">
+      <span class="section__number">I &middot; Comandos</span>
+      <h2>Quatro verbos</h2>
+    </div>
+
+    <div class="grid">
+      <article class="card">
+        <h4>report &middot; scan</h4>
+        <p>Descobre e relata. Não encosta em nenhum arquivo. É por onde se começa, sempre.</p>
+      </article>
+      <article class="card">
+        <h4>copy-unique</h4>
+        <p>Copia únicos e canônicos para um diretório novo, achatado. O original fica intacto onde está.</p>
+      </article>
+      <article class="card card--destructive">
+        <h4>move-duplicates</h4>
+        <p>Move só as cópias para uma quarentena. O canônico permanece no lugar.</p>
+      </article>
+      <article class="card card--destructive">
+        <h4>delete-duplicates</h4>
+        <p>Apaga só as cópias. Exige <code>--yes</code> explícito <span class="rubric">e</span> <code>--dry-run=false</code>.</p>
+      </article>
+    </div>
+  </div>
+
+  <!-- COMEÇAR -->
+  <div class="section">
+    <div class="section__head">
+      <span class="section__number">II &middot; Primeiros passos</span>
+      <h2>Instalar e executar</h2>
+    </div>
+
+    <h3>Direto do código</h3>
+    <span class="code-label">shell</span>
+<pre><code>go run ./cmd/dedup report ./fotos</code></pre>
+
+    <h3>Binário local</h3>
+    <span class="code-label">shell</span>
+<pre><code>make build
+./bin/dedup report ./fotos</code></pre>
+
+    <h3>Instalação no sistema</h3>
+    <span class="code-label">shell</span>
+<pre><code>make build
+sudo ./install.sh --local ./bin/dedup
+dedup version</code></pre>
+
+    <p>Sem <code>sudo</code>, instale para o seu usuário:</p>
+    <span class="code-label">shell</span>
+<pre><code>./install.sh --local ./bin/dedup --bin-dir "$HOME/.local/bin"
+export PATH="$HOME/.local/bin:$PATH"</code></pre>
+
+    <h3>Pacote Debian</h3>
+    <span class="code-label">shell</span>
+<pre><code>sudo dpkg -i dedup_&lt;versão&gt;_linux_amd64.deb</code></pre>
+
+    <h3>Autocompletar</h3>
+    <span class="code-label">shell</span>
+<pre><code>dedup completion bash &gt; /etc/bash_completion.d/dedup
+dedup completion zsh  &gt; /usr/share/zsh/site-functions/_dedup
+dedup completion fish &gt; ~/.config/fish/completions/dedup.fish</code></pre>
+  </div>
+
+  <!-- SEGURANÇA -->
+  <div class="section">
+    <div class="section__head">
+      <span class="section__number">III &middot; Segurança</span>
+      <h2>A recusa em agir</h2>
+    </div>
+
+    <p>Todo comando destrutivo nasce em <code>--dry-run=true</code>. Rodar sem mais nada mostra o que <em>seria</em> feito e termina sem escrever nada.</p>
+
+    <span class="code-label">ensaio</span>
+<pre><code>dedup delete-duplicates ./fotos
+# lista o que apagaria — e não apaga</code></pre>
+
+    <span class="code-label">para valer</span>
+<pre><code>dedup delete-duplicates ./fotos --yes --dry-run=false</code></pre>
+
+    <h3>As seis invariantes</h3>
+    <p>Verificadas <strong>antes</strong> de qualquer ação tocar o disco. Violação aborta o plano inteiro, não o item.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Garantia</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>Nenhuma ação destrutiva alcança um canônico. Apagar ou mover o que foi eleito para ficar é impossível por construção.</td></tr>
+          <tr><td>2</td><td>Em <code>copy-unique</code>, nenhum destino cai dentro de uma raiz de entrada. A saída nunca contamina a varredura.</td></tr>
+          <tr><td>3</td><td>Todo caminho de destino é único no plano. Duas ações nunca disputam o mesmo arquivo.</td></tr>
+          <tr><td>4</td><td>A cópia recusa sobrescrever destino com bytes diferentes. Divergência falha alto, não em silêncio.</td></tr>
+          <tr><td>5</td><td><code>Delete</code> recusa remover diretório. Sempre, sem exceção.</td></tr>
+          <tr><td>6</td><td>A sequência do plano é contígua de 1 a N. Buraco na numeração aborta a execução.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note note--warn">
+      <span class="note__label">Irreversível</span>
+      <p><code>delete-duplicates</code> apaga de verdade. Não há lixeira, não há desfazer. Rode o ensaio, leia a lista, e só então acrescente <code>--yes --dry-run=false</code>.</p>
+    </div>
+  </div>
+
+  <!-- CANÔNICO -->
+  <div class="section">
+    <div class="section__head">
+      <span class="section__number">IV &middot; Canônico</span>
+      <h2>Quem fica</h2>
+    </div>
+
+    <p>Dentro de um grupo de arquivos idênticos, um é eleito canônico e os demais viram cópias. A eleição é determinística — as mesmas entradas elegem sempre o mesmo vencedor.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Critério</th><th>Regra</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1º &middot; idade</td><td>Vence o <code>mtime</code> <strong>mais antigo</strong>. O original costuma ser o primeiro a existir.</td></tr>
+          <tr><td>2º &middot; desempate</td><td>Ordem lexical do caminho, quando os <code>mtime</code> são exatamente iguais.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>A seleção devolve junto a razão da escolha e os tempos dos derrotados, de modo que a decisão seja auditável e não apenas confiável.</p>
+
+    <div class="note">
+      <span class="note__label">Determinismo testado</span>
+      <p><code>run_test.go</code> trata o determinismo como regressão: mesma árvore de entrada precisa produzir saída byte a byte idêntica. É o que torna o Dedup utilizável em CI.</p>
+    </div>
+  </div>
+
+  <!-- CONFIGURAÇÃO -->
+  <div class="section">
+    <div class="section__head">
+      <span class="section__number">V &middot; Configuração</span>
+      <h2>Três camadas</h2>
+    </div>
+
+    <p>Precedência, da maior para a menor:</p>
+
+    <span class="code-label">ordem</span>
+<pre><code>flag de linha de comando  &gt;  variável DEDUP_*  &gt;  arquivo YAML  &gt;  padrão</code></pre>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Chave</th><th>O que controla</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>roots</td><td>Diretórios de entrada. Vários numa só passada.</td></tr>
+          <tr><td>mode</td><td>Qual dos quatro verbos executar.</td></tr>
+          <tr><td>dry_run</td><td>Ensaio. Verdadeiro por padrão.</td></tr>
+          <tr><td>suppress_name</td><td>Descarta o nome original na saída achatada.</td></tr>
+          <tr><td>output.dir</td><td>Destino do <code>copy-unique</code>. Validado contra as raízes.</td></tr>
+          <tr><td>destination.dir</td><td>Quarentena do <code>move-duplicates</code>.</td></tr>
+          <tr><td>concurrency.workers</td><td>Paralelismo da varredura e do hash.</td></tr>
+          <tr><td>concurrency.action_workers</td><td>Paralelismo da execução do plano.</td></tr>
+          <tr><td>filters.include / exclude</td><td>Padrões de caminho a considerar ou ignorar.</td></tr>
+          <tr><td>filters.ext</td><td>Restrição por extensão.</td></tr>
+          <tr><td>canonical.policy</td><td>Política de eleição do canônico.</td></tr>
+          <tr><td>canonical.canonical_folder</td><td>Pasta cujos arquivos têm preferência na eleição.</td></tr>
+          <tr><td>audit.dir</td><td>Onde gravar a trilha. Padrão <code>./.dedup-audit/</code>.</td></tr>
+          <tr><td>strict</td><td>Transforma aviso em falha.</td></tr>
+          <tr><td>follow_symlinks</td><td>Seguir ligações simbólicas na varredura.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- AUDITORIA -->
+  <div class="section">
+    <div class="section__head">
+      <span class="section__number">VI &middot; Auditoria</span>
+      <h2>A trilha</h2>
+    </div>
+
+    <p>Toda execução grava um JSONL <strong>antes</strong> de agir — write-ahead. Se o processo morrer no meio, a trilha já registrou a intenção, e dá para reconstruir o que havia sido planejado.</p>
+
+    <span class="code-label">caminho</span>
+<pre><code>./.dedup-audit/&lt;started_at&gt;.jsonl</code></pre>
+
+    <p>Em modo de ensaio, cada item entra com <code>status=planned</code> e o disco permanece intocado. A trilha do ensaio é, portanto, o plano exato que a execução real seguiria.</p>
+  </div>
+
+  <!-- FORMA -->
+  <div class="section">
+    <div class="section__head">
+      <span class="section__number">VII &middot; Forma</span>
+      <h2>O pipeline</h2>
+    </div>
+
+    <p><code>cmd/dedup</code> é uma casca fina sobre <code>internal/cli</code>. Todos os comandos descem pelo mesmo caminho em <code>internal/pipeline.Run</code>:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Etapa</th><th>O que faz</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>scan.Walk</td><td>Percorre as raízes e coleta os candidatos, respeitando filtros.</td></tr>
+          <tr><td>compare.PreSize</td><td>Agrupa por tamanho. Tamanho que aparece uma vez só não pode ter irmão idêntico — vira único sem nunca ser lido.</td></tr>
+          <tr><td>internal/hash</td><td>BLAKE3 em streaming, só sobre quem sobreviveu ao agrupamento por tamanho.</td></tr>
+          <tr><td>canonical.Select</td><td>Elege o canônico de cada grupo e registra a razão.</td></tr>
+          <tr><td>actions.Plan</td><td>Monta o plano numerado de 1 a N.</td></tr>
+          <tr><td>actions.CheckInvariants</td><td>Verifica as seis garantias. Falhou, nada é executado.</td></tr>
+          <tr><td>actions.Execute</td><td>Aplica o plano, gravando a trilha item a item.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <span class="note__label">Por que o agrupamento por tamanho vem antes</span>
+      <p>É o que faz o Dedup ser rápido em árvores grandes. Um arquivo cujo tamanho aparece uma única vez na entrada não pode, por definição, ter um gêmeo byte a byte em lugar nenhum — então ele nunca é lido para hash.</p>
+    </div>
+  </div>
+
+  <!-- INTEGRAÇÕES -->
+  <div class="section">
+    <div class="section__head">
+      <span class="section__number">VIII &middot; Integrações</span>
+      <h2>Como plugin</h2>
+    </div>
+
+    <p>O repositório empacota o Dedup para três hospedeiros, cada um com seu instalador:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Hospedeiro</th><th>Instalador</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Claude Code</td><td><code>./install-claude-code-plugin.sh</code></td></tr>
+          <tr><td>Cursor</td><td><code>./install-cursor-plugin.sh</code></td></tr>
+          <tr><td>OpenClaw</td><td><code>./install-openclaw-skill.sh</code> &mdash; ou <code>--workspace</code> para instalar em <code>./skills/dedup</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Todos esperam o binário <code>dedup</code> disponível no <code>PATH</code>.</p>
+  </div>
+
+</section>
+
+<!-- ══════════════════ PAINEL: AGENTES ══════════════════ -->
+<section class="panel" id="panel-ai" role="tabpanel" aria-labelledby="tab-ai" data-active="false">
+
+  <div class="section">
+    <p class="lede">Esta aba descreve o Dedup em forma estruturada. As invariantes listadas adiante não são recomendação: são verificações executadas em <code>actions.CheckInvariants</code> antes de qualquer escrita, e cuja violação aborta o plano inteiro.</p>
+  </div>
+
+  <div class="ornament" aria-hidden="true"><span>&#10070;</span></div>
+
+  <div class="section">
+    <div class="section__head">
+      <span class="section__number">I &middot; Descritor</span>
+      <h2>Projeto</h2>
+    </div>
+    <span class="code-label">json</span>
+<pre><code>{
+  "name": "Dedup",
+  "module": "deduplicator",
+  "kind": "file-deduplicator",
+  "summary": "Exact, byte-identical file deduplication. No fuzzy matching.",
+  "language": "go",
+  "go_min_version": "1.25",
+  "hash": "BLAKE3, streamed",
+  "platforms": ["linux/amd64", "linux/arm64", "windows/amd64"],
+  "license": "MIT",
+  "entrypoint": "cmd/dedup -> internal/cli",
+  "build": "make build            # -> ./bin/dedup",
+  "test":  "make test             # go test ./... -count=1",
+  "e2e":   "make test-e2e         # -tags=e2e ./test/e2e/...",
+  "lint":  "make lint             # golangci-lint, .golangci.yml"
+}</code></pre>
+  </div>
+
+  <div class="section">
+    <div class="section__head">
+      <span class="section__number">II &middot; Comandos</span>
+      <h2>Contrato de CLI</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Comando</th><th>Escreve?</th><th>Exige</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>report</td><td>não</td><td>&mdash;</td></tr>
+          <tr><td>scan</td><td>não</td><td>alias de <code>report</code></td></tr>
+          <tr><td>copy-unique</td><td>sim</td><td><code>--out DIR</code>, <code>--dry-run=false</code></td></tr>
+          <tr><td>move-duplicates</td><td>sim</td><td><code>--dry-run=false</code></td></tr>
+          <tr><td>delete-duplicates</td><td>sim</td><td><code>--yes</code> <span class="rubric">e</span> <code>--dry-run=false</code></td></tr>
+          <tr><td>version</td><td>não</td><td>&mdash;</td></tr>
+          <tr><td>completion</td><td>não</td><td><code>bash|zsh|fish|powershell</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Todos os comandos de varredura aceitam uma ou mais raízes como argumento posicional. Para usar o diretório corrente, passe <code>.</code> explicitamente.</p>
+  </div>
+
+  <div class="section">
+    <div class="section__head">
+      <span class="section__number">III &middot; Pipeline</span>
+      <h2>Etapas</h2>
+    </div>
+    <span class="code-label">fluxo</span>
+<pre><code>scan.Walk
+  └─ respeita filters.include / exclude / ext, follow_symlinks
+
+compare.PreSize
+  └─ agrupa por tamanho
+  └─ tamanho singular => único, nunca lido para hash
+
+internal/hash  (BLAKE3, streaming)
+  └─ só sobre grupos de tamanho com 2+ membros
+
+canonical.Select
+  └─ 1º mtime mais antigo
+  └─ 2º ordem lexical do caminho
+  └─ devolve SelectionReason + tempos dos derrotados
+
+actions.Plan
+  └─ itens numerados 1..N
+
+actions.CheckInvariants      <-- antes de qualquer escrita
+  └─ violação aborta o plano inteiro
+
+actions.Execute
+  └─ grava JSONL write-ahead por item
+  └─ dry-run => status=planned, disco intocado</code></pre>
+  </div>
+
+  <div class="section">
+    <div class="section__head">
+      <span class="section__number">IV &middot; Invariantes</span>
+      <h2>Verificadas em código</h2>
+    </div>
+
+    <p>Origem: <code>internal/actions/invariants.go</code>. Cada uma devolve erro que interrompe a execução.</p>
+
+    <span class="code-label">json</span>
+<pre><code>[
+  { "id": 1,
+    "rule": "no destructive action targets a canonical path",
+    "applies_to": ["delete", "move"],
+    "error": "invariant: {kind} action on canonical {path}" },
+
+  { "id": 2,
+    "rule": "no copy destination lies inside any input root",
+    "applies_to": ["copy-unique"],
+    "error": "invariant: copy destination {dst} is inside root {root}" },
+
+  { "id": 3,
+    "rule": "every destination path in the plan is unique",
+    "applies_to": ["all"],
+    "error": "invariant: duplicate destination {dst}" },
+
+  { "id": 4,
+    "rule": "copy refuses to overwrite a destination with different bytes",
+    "applies_to": ["copy-unique"],
+    "behaviour": "fails loudly, never silently" },
+
+  { "id": 5,
+    "rule": "delete refuses to remove directories",
+    "applies_to": ["delete-duplicates"],
+    "behaviour": "always, no exception" },
+
+  { "id": 6,
+    "rule": "plan seq is contiguous 1..N",
+    "applies_to": ["all"],
+    "error": "invariant: plan seq is not contiguous 1..N" }
+]</code></pre>
+
+    <p>Há ainda uma validação de configuração que roda antes: <code>output.dir</code> não pode estar dentro de nenhuma raiz de entrada.</p>
+  </div>
+
+  <div class="section">
+    <div class="section__head">
+      <span class="section__number">V &middot; Configuração</span>
+      <h2>Precedência e chaves</h2>
+    </div>
+    <span class="code-label">yaml</span>
+<pre><code>roots: [./fotos, ./videos]
+mode: report
+dry_run: true
+suppress_name: false
+strict: false
+follow_symlinks: false
+
+output:
+  dir: ./deduped
+  preserve_timestamps: true
+
+destination:
+  dir: ./quarantine
+
+concurrency:
+  workers: 8
+  action_workers: 4
+
+filters:
+  include: []
+  exclude: []
+  ext: []
+
+canonical:
+  policy: oldest
+  canonical_folder: ""
+
+logging:
+  level: info
+  format: text
+
+audit:
+  dir: ./.dedup-audit</code></pre>
+
+    <p>Cada chave tem contraparte em variável de ambiente com prefixo <code>DEDUP_</code>, e uma flag de linha de comando. A flag vence a variável, que vence o YAML, que vence o padrão.</p>
+  </div>
+
+  <div class="section">
+    <div class="section__head">
+      <span class="section__number">VI &middot; Determinismo</span>
+      <h2>Contrato de saída</h2>
+    </div>
+
+    <p>A saída é determinística por projeto, e isso é verificado como regressão em <code>run_test.go</code>. Para um agente, a consequência prática:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Garantia</th><th>Implicação</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Mesma entrada, mesma saída</td><td>Diffs de relatório são significativos: mudou o relatório, mudou a árvore.</td></tr>
+          <tr><td>Canônico estável</td><td>Rodar duas vezes nunca elege vencedores diferentes.</td></tr>
+          <tr><td>Sufixo de colisão estável</td><td><code>_1</code>, <code>_2</code> seguem ordem fixa, não ordem de descoberta.</td></tr>
+          <tr><td>Ensaio == execução</td><td>O plano do <code>--dry-run</code> é exatamente o que a execução real aplicaria.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section__head">
+      <span class="section__number">VII &middot; Limites</span>
+      <h2>O que ele não é</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Não faz</th><th>Porquê</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Similaridade</td><td>Duplicata é identidade de bytes. Imagem redimensionada não é cópia.</td></tr>
+          <tr><td>Transformação de conteúdo</td><td>Não normaliza, não converte, não re-encoda antes de comparar.</td></tr>
+          <tr><td>OCR ou leitura semântica</td><td>Fora de escopo por decisão de projeto.</td></tr>
+          <tr><td>Lixeira ou desfazer</td><td><code>delete-duplicates</code> apaga. A proteção é o ensaio, não a reversão.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note note--warn">
+      <span class="note__label">Para agentes</span>
+      <p>Nunca invoque <code>delete-duplicates --yes --dry-run=false</code> sem ter apresentado antes ao usuário a saída do ensaio e obtido confirmação explícita. A flag <code>--yes</code> suprime a pergunta do programa, não a necessidade de perguntar.</p>
+    </div>
+  </div>
+
+</section>
+
+</main>
+
+<footer>
+  <div class="footer__inner">
+    <span><em>Dedup</em> &middot; Documentação</span>
+    <span>Outubro de 2026 &middot; MIT</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  const tabs = Array.from(document.querySelectorAll('.tab'));
+  const panels = new Map(
+    Array.from(document.querySelectorAll('.panel')).map(p => [p.id.replace('panel-', ''), p])
+  );
+
+  function select(target) {
+    tabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.target === target)));
+    panels.forEach((panel, key) => panel.setAttribute('data-active', String(key === target)));
+  }
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => select(tab.dataset.target));
+    tab.addEventListener('keydown', e => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault();
+      const i = tabs.indexOf(tab);
+      const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      next.focus();
+      select(next.dataset.target);
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

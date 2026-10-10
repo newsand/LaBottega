@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sunna — Coletores</title>
+<link rel="stylesheet" href="assets/sunna.css">
+<script src="assets/sunna.js" defer></script>
+</head>
+<body>
+
+<a class="skip" href="#conteudo">Pular para o conteúdo</a>
+
+<nav class="rail" aria-label="Índice da documentação">
+  <a class="rail__brand" href="index.html">SUNNA</a>
+  <p class="rail__group" id="g-guia">guia</p>
+  <ul class="rail__list" aria-labelledby="g-guia">
+    <li><a class="rail__link" href="index.html">Visão geral</a></li>
+    <li><a class="rail__link" href="inicio.html">Primeiros passos</a></li>
+    <li><a class="rail__link" href="coletores.html" aria-current="page">Coletores</a></li>
+    <li><a class="rail__link" href="achados.html">Achados</a></li>
+    <li><a class="rail__link" href="arquitetura.html">Arquitetura</a></li>
+  </ul>
+  <p class="rail__group" id="g-ref">referência</p>
+  <ul class="rail__list" aria-labelledby="g-ref">
+    <li><a class="rail__link" href="referencia.html">Contratos</a></li>
+  </ul>
+</nav>
+
+<div class="main">
+<div class="shell" id="conteudo">
+
+  <header class="page-head">
+    <p class="page-head__eyebrow">Guia &middot; 02</p>
+    <h1>Coletores</h1>
+    <p class="lede">Seis coletores, e cada um existe por causa de um erro concreto que ele evita. Esta página é sobre esses erros — porque entender o que cada coletor recusa fazer explica melhor o produto do que listar o que ele faz.</p>
+  </header>
+
+  <div class="ornament" aria-hidden="true"><span>&#10042;</span></div>
+
+  <!-- A01 -->
+  <section class="section" id="hosts">
+    <div class="section__head">
+      <span class="section__number">a01 &middot; Coleta</span>
+      <h2>Descoberta de hosts</h2>
+    </div>
+
+    <p>Produz a lista de hosts vivos na sub-rede da rota default unindo <strong>três fontes que isoladamente são insuficientes</strong>: o sweep do nmap, a tabela ARP do kernel e os anúncios mDNS.</p>
+
+    <h3>O erro que ela evita</h3>
+    <p>Sem privilégio o nmap não abre socket raw, e a descoberta vira um <code>connect()</code> TCP em 80 e 443. Um host que filtra as duas portas fica invisível — e uma lista que o omite em silêncio afirma, por omissão, que ele não existe.</p>
+
+    <p>A tabela ARP recupera exatamente esses hosts, porque responder ARP é obrigatório na rede local. Um host pode recusar toda conexão TCP; não pode recusar ARP.</p>
+
+    <div class="table-wrap">
+      <table class="table--cases">
+        <thead>
+          <tr><th>Dado</th><th>Então</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Um host responde ao sweep</td><td><code>discovery</code> contém <code>sweep</code></td></tr>
+          <tr><td>Um host filtra 80 e 443, mas já conversou com esta máquina, e a varredura roda sem privilégio</td><td><code>discovery</code> contém apenas <code>arp</code> — e ele <strong>não</strong> é omitido da lista</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>O campo <code>discovery</code> nunca vem vazio: ele registra toda origem que viu aquele host, de modo que a procedência de cada linha seja verificável.</p>
+  </section>
+
+  <!-- A02 -->
+  <section class="section" id="portas">
+    <div class="section__head">
+      <span class="section__number">a02 &middot; Coleta</span>
+      <h2>Varredura de portas</h2>
+    </div>
+
+    <p>Levanta portas abertas por host e, quando possível, o serviço real por trás delas.</p>
+
+    <h3>O erro que ela evita</h3>
+    <p>O nmap sem <code>-sV</code> rotula a porta pelo número, consultando <code>/etc/services</code>. Isso produz afirmação falsa com cara de fato: a porta <strong>6001 vira "X11"</strong> quando na verdade ali roda um servidor WebSocket.</p>
+
+    <p>A regra que impede isso: só o que veio de <code>method="probe"</code> no XML do nmap pode ser exibido como serviço identificado. Todo o resto é renderizado como <em>"não identificado"</em>.</p>
+
+    <div class="table-wrap">
+      <table class="table--cases">
+        <thead>
+          <tr><th>Dado</th><th>Então</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Um host foi descoberto</td><td>A varredura usa <code>-Pn</code>, porque repetir a descoberta perderia os hosts que só apareceram por ARP</td></tr>
+          <tr><td>O <code>-sV</code> confirmou produto e versão</td><td>O rótulo é o produto e a versão</td></tr>
+          <tr><td>O nmap só chutou o serviço pelo número da porta</td><td>O rótulo é <code>"não identificado"</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note note--rule">
+      <span class="note__label">A regra na forma de código</span>
+      <p><code>Port::label()</code> devolve <code>"não identificado"</code> sempre que <code>confirmed</code> é falso. O campo <code>confirmed</code> só vira verdadeiro com <code>method="probe"</code>. Não há caminho pelo qual um palpite chegue à tela como afirmação.</p>
+    </div>
+  </section>
+
+  <!-- A03 -->
+  <section class="section" id="sockets">
+    <div class="section__head">
+      <span class="section__number">a03 &middot; Coleta</span>
+      <h2>Serviços desta máquina</h2>
+    </div>
+
+    <p>Lista tudo que escuta nesta máquina com processo e PID, e classifica cada socket pelo que de fato importa: <strong>quem consegue conectar</strong>.</p>
+
+    <p>Um bind em <code>127.0.0.1</code> só existe para a própria máquina. Um bind em <code>0.0.0.0</code>, <code>::</code> ou <code>*</code> aceita conexão de qualquer dispositivo da rede. A diferença entre as duas coisas é a diferença entre um serviço privado e um serviço exposto, e é por isso que o alcance é coluna de primeira classe e não detalhe.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Alcance</th><th>Quando o bind é</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>lan</td><td><code>0.0.0.0</code>, <code>::</code>, <code>*</code></td></tr>
+          <tr><td>loopback</td><td><code>127.*</code>, <code>::1</code></td></tr>
+          <tr><td>multicast</td><td><code>224.*</code>, <code>ff*</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>O erro que ela evita</h3>
+    <p>Socket de outro usuário, varredura sem privilégio: o PID aparece como <code>"requer root"</code>. Nunca um palpite obtido casando nome de processo no <code>ps</code> — que aponta o processo errado toda vez que existem dois processos de mesmo nome.</p>
+  </section>
+
+  <!-- A04 -->
+  <section class="section" id="docker">
+    <div class="section__head">
+      <span class="section__number">a04 &middot; Coleta</span>
+      <h2>Estado do Docker</h2>
+    </div>
+
+    <p>Containers, redes bridge e ocupação de disco.</p>
+
+    <h3>Por que existe</h3>
+    <p>Duas razões. A primeira: numa máquina de desenvolvimento, o Docker é a maior fonte de interfaces de rede e de faixas de IP — ignorá-lo é ignorar metade do mapa.</p>
+
+    <p>A segunda: <strong>container em ciclo de reinício é o tipo de falha que passa despercebida</strong>. O frontend responde, a porta está aberta, e a aplicação está quebrada por dentro, reiniciando a cada poucos segundos.</p>
+
+    <div class="table-wrap">
+      <table class="table--cases">
+        <thead>
+          <tr><th>Dado</th><th>Então</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>O daemon não responde</td><td>Entra em <code>skipped</code> com o motivo, e a interface diz isso — em vez de mostrar seção vazia</td></tr>
+          <tr><td>Um container tem <code>state == "restarting"</code></td><td><code>restarting</code> fica verdadeiro</td></tr>
+          <tr><td>Uma rede bridge não tem nenhum container</td><td>É marcada como órfã</td></tr>
+          <tr><td>É a bridge padrão</td><td>O nome de interface derivado é <code>docker0</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- A05 -->
+  <section class="section" id="aplicacao">
+    <div class="section__head">
+      <span class="section__number">a05 &middot; Coleta</span>
+      <h2>Identificação de aplicação</h2>
+    </div>
+
+    <p>Diz <strong>qual aplicação</strong> responde numa porta, não apenas que a porta está aberta. A varredura diz <code>8000/tcp open http</code>; quem está olhando quer ler <em>Coolify</em>.</p>
+
+    <h3>Sem catálogo</h3>
+    <p>O nome exibido é o próprio <code>&lt;title&gt;</code> da resposta HTTP, tal como o servidor mandou. Não há lista de nomes conhecidos — e essa ausência é deliberada: uma lista fixa só reconhece o que alguém pensou em listar, e quebra justamente na rede de quem não usa nenhum dos aplicativos listados.</p>
+
+    <p>A decisão revogou um catálogo de 274 nomes que existia antes no projeto.</p>
+
+    <h3>O caso que motivou a feature</h3>
+    <p>Um proxy reverso que roteia por domínio responde <strong>404 no IP nu</strong>, porque não existe rota para o IP. Um scan completo das 65.535 portas de um servidor com Jellyfin e Vaultwarden rodando não achou nenhum dos dois: a porta 80 estava aberta e respondia 404, e isso foi tudo que o scan viu.</p>
+
+    <p>Para esse caso, você digita o nome na aba Aplicações. O programa resolve pelo mDNS e, se não achar, pergunta o nome direto a cada host que já parece proxy sem rota, usando o cabeçalho <code>Host</code>.</p>
+
+    <div class="note">
+      <span class="note__label">A exceção à ausência de histórico</span>
+      <p>Nomes buscados que foram confirmados e rótulos que você escreveu persistem em <code>$XDG_CONFIG_HOME/sunna/apps.json</code>. É exceção estreita e consciente à regra de não guardar nada entre execuções — existe só para você não redigitar o nome a cada abertura. Nenhum dado de varredura é persistido.</p>
+    </div>
+  </section>
+
+  <!-- A06 -->
+  <section class="section" id="acoes">
+    <div class="section__head">
+      <span class="section__number">a06 &middot; Ação</span>
+      <h2>Ações no Docker</h2>
+    </div>
+
+    <p>Parar um container, remover um container, remover uma imagem, e limpar de uma vez o que não tem uso — sem sair para o terminal.</p>
+
+    <div class="note note--rule">
+      <span class="note__label">A única que escreve</span>
+      <p>Esta é a primeira e única feature do produto que <strong>escreve</strong>. Todo o resto é leitura, e as SPECS exigem que essa diferença apareça tanto no código quanto na tela.</p>
+    </div>
+
+    <h3>Confirmação proporcional</h3>
+    <p>Parar um container <strong>não</strong> pede confirmação, porque <code>docker start</code> desfaz. A pergunta fica reservada para o que não se desfaz — remover container, remover imagem, limpar. O critério é a reversibilidade, não a gravidade aparente.</p>
+  </section>
+
+  <nav class="next" aria-label="Navegação entre páginas">
+    <a class="next__link" href="inicio.html">
+      <span class="next__dir">Anterior</span>
+      <span class="next__title">&larr; Primeiros passos</span>
+    </a>
+    <a class="next__link next__link--fwd" href="achados.html">
+      <span class="next__dir">Próxima</span>
+      <span class="next__title">Achados &rarr;</span>
+    </a>
+  </nav>
+
+  <footer>
+    <span><em>Sunna</em> &middot; Documentação</span>
+    <span>Outubro de 2026 &middot; MIT</span>
+  </footer>
+
+</div>
+</div>
+
+</body>
+</html>

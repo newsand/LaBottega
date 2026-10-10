@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sunna — Primeiros passos</title>
+<link rel="stylesheet" href="assets/sunna.css">
+<script src="assets/sunna.js" defer></script>
+</head>
+<body>
+
+<a class="skip" href="#conteudo">Pular para o conteúdo</a>
+
+<nav class="rail" aria-label="Índice da documentação">
+  <a class="rail__brand" href="index.html">SUNNA</a>
+  <p class="rail__group" id="g-guia">guia</p>
+  <ul class="rail__list" aria-labelledby="g-guia">
+    <li><a class="rail__link" href="index.html">Visão geral</a></li>
+    <li><a class="rail__link" href="inicio.html" aria-current="page">Primeiros passos</a></li>
+    <li><a class="rail__link" href="coletores.html">Coletores</a></li>
+    <li><a class="rail__link" href="achados.html">Achados</a></li>
+    <li><a class="rail__link" href="arquitetura.html">Arquitetura</a></li>
+  </ul>
+  <p class="rail__group" id="g-ref">referência</p>
+  <ul class="rail__list" aria-labelledby="g-ref">
+    <li><a class="rail__link" href="referencia.html">Contratos</a></li>
+  </ul>
+</nav>
+
+<div class="main">
+<div class="shell" id="conteudo">
+
+  <header class="page-head">
+    <p class="page-head__eyebrow">Guia &middot; 01</p>
+    <h1>Primeiros passos</h1>
+    <p class="lede">Compilar, executar, e entender o que a máquina precisa ter instalado para que a varredura enxergue tudo que pode enxergar.</p>
+  </header>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">I &middot; Executar</span>
+      <h2>O aplicativo</h2>
+    </div>
+
+    <p>A casca <code>egui</code> vive na branch <code>main</code> e é a que compila sem dependência de sistema adicional:</p>
+
+    <span class="code-label">shell</span>
+<pre><code>cargo run -p sunna-egui</code></pre>
+
+    <h3>A casca Tauri</h3>
+    <p>Vive na branch <code>tauri</code> e usa a WebView do sistema. Exige <code>libwebkit2gtk-4.1-dev</code> instalado antes de compilar.</p>
+
+    <h3>O motor, sem interface</h3>
+    <p>O exemplo <code>scan</code> roda o núcleo contra o sistema real e imprime o resultado. É o caminho mais curto para ver o que a varredura devolve — e o único jeito de exercitar os coletores sem abrir janela.</p>
+
+    <span class="code-label">shell</span>
+<pre><code>cargo run -p sunna-core --example scan
+cargo run -p sunna-core --example scan -- --json
+cargo run -p sunna-core --example scan -- --privileged</code></pre>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">II &middot; Sistema</span>
+      <h2>Dependências</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Ferramenta</th><th>Necessária</th><th>Para quê</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>nmap</td><td>sim</td><td>Descoberta de hosts e varredura de portas</td></tr>
+          <tr><td>iproute2</td><td>sim</td><td><code>ip</code> para a rota default, <code>ss</code> para os sockets em escuta</td></tr>
+          <tr><td>avahi-utils</td><td>não</td><td>Anúncios mDNS da rede local</td></tr>
+          <tr><td>docker</td><td>não</td><td>Containers, redes bridge e ocupação de disco</td></tr>
+          <tr><td>ieee-data</td><td>não</td><td>Base OUI local, para traduzir MAC em fabricante</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <span class="note__label">Ausência tem nome</span>
+      <p>Coletor que não pôde rodar vira <code>Snapshot::skipped</code> com o motivo escrito. Seção vazia sem explicação é proibida no projeto: ela comunica <em>"não há nada aqui"</em> quando a verdade é <em>"não foi possível olhar"</em>.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">III &middot; Privilégio</span>
+      <h2>O que fica invisível sem root</h2>
+    </div>
+
+    <p>Sem privilégio, o <code>nmap</code> não consegue abrir socket raw. A descoberta então degrada para um <code>connect()</code> TCP em 80 e 443 — e um host que filtra essas duas portas simplesmente não aparece na lista.</p>
+
+    <p>É exatamente esse buraco que a tabela ARP do kernel preenche, porque responder ARP é obrigatório na rede local. Com <code>--privileged</code>, o <code>pkexec</code> eleva a descoberta e o ARP entra em jogo:</p>
+
+    <span class="code-label">shell</span>
+<pre><code>cargo run -p sunna-core --example scan -- --privileged</code></pre>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Sem privilégio</th><th>Com privilégio</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Descoberta</td><td><code>connect()</code> em 80 e 443 &rarr; sweep ARP completo</td></tr>
+          <tr><td>Host que filtra tudo</td><td>invisível &rarr; aparece, via ARP</td></tr>
+          <tr><td>PID de socket alheio</td><td><code>"requer root"</code> &rarr; o PID real</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <span class="note__label">Nunca deduzido</span>
+      <p>Quando o PID não está acessível, a interface escreve <code>"requer root"</code>. Deduzir o dono de um socket casando nome de processo no <code>ps</code> é proibido: aponta o processo errado sempre que existem homônimos, e um palpite com cara de fato é pior que uma lacuna honesta.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">IV &middot; Portão</span>
+      <h2>Qualidade</h2>
+    </div>
+
+    <p>Todos bloqueiam. Vermelho em qualquer um significa que não há merge.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Portão</th><th>Comando</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>formato</td><td><code>cargo fmt --all --check</code></td></tr>
+          <tr><td>lint</td><td><code>cargo clippy --all-targets -- -D warnings</code></td></tr>
+          <tr><td>testes</td><td><code>cargo test --all</code></td></tr>
+          <tr><td>segredos</td><td><code>gitleaks detect --no-banner</code></td></tr>
+          <tr><td>dependências</td><td><code>cargo audit</code> &mdash; quando instalado</td></tr>
+          <tr><td>especificação</td><td><code>python3 tools/spec-gate.py</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Complexidade nunca bloqueia — gera relatório e nada mais. <code>cargo audit</code> e <code>cargo deny</code> estavam ausentes na máquina de referência em setembro de 2026; instale <code>cargo-audit</code> antes de considerar esse portão cumprido.</p>
+  </section>
+
+  <nav class="next" aria-label="Navegação entre páginas">
+    <a class="next__link" href="index.html">
+      <span class="next__dir">Anterior</span>
+      <span class="next__title">&larr; Visão geral</span>
+    </a>
+    <a class="next__link next__link--fwd" href="coletores.html">
+      <span class="next__dir">Próxima</span>
+      <span class="next__title">Coletores &rarr;</span>
+    </a>
+  </nav>
+
+  <footer>
+    <span><em>Sunna</em> &middot; Documentação</span>
+    <span>Outubro de 2026 &middot; MIT</span>
+  </footer>
+
+</div>
+</div>
+
+</body>
+</html>

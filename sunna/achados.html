@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sunna — Achados</title>
+<link rel="stylesheet" href="assets/sunna.css">
+<script src="assets/sunna.js" defer></script>
+</head>
+<body>
+
+<a class="skip" href="#conteudo">Pular para o conteúdo</a>
+
+<nav class="rail" aria-label="Índice da documentação">
+  <a class="rail__brand" href="index.html">SUNNA</a>
+  <p class="rail__group" id="g-guia">guia</p>
+  <ul class="rail__list" aria-labelledby="g-guia">
+    <li><a class="rail__link" href="index.html">Visão geral</a></li>
+    <li><a class="rail__link" href="inicio.html">Primeiros passos</a></li>
+    <li><a class="rail__link" href="coletores.html">Coletores</a></li>
+    <li><a class="rail__link" href="achados.html" aria-current="page">Achados</a></li>
+    <li><a class="rail__link" href="arquitetura.html">Arquitetura</a></li>
+  </ul>
+  <p class="rail__group" id="g-ref">referência</p>
+  <ul class="rail__list" aria-labelledby="g-ref">
+    <li><a class="rail__link" href="referencia.html">Contratos</a></li>
+  </ul>
+</nav>
+
+<div class="main">
+<div class="shell" id="conteudo">
+
+  <header class="page-head">
+    <p class="page-head__eyebrow">Guia &middot; 03</p>
+    <h1>Achados</h1>
+    <p class="lede">Transformar observação em conclusão por regra nomeada, nunca por texto escrito à mão para um host específico. Esta é a feature que define o caráter do produto — e a que nasceu de uma crítica ao próprio produto.</p>
+  </header>
+
+  <div class="ornament" aria-hidden="true"><span>&#10042;</span></div>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">I &middot; Origem</span>
+      <h2>Por que a regra existe</h2>
+    </div>
+
+    <p>A versão anterior do painel era um instantâneo com prosa escrita à mão sobre endereços concretos. Alguém tinha olhado aquela rede, formado uma opinião, e digitado a opinião na tela.</p>
+
+    <p>Isso tem dois defeitos fatais, e os dois são sobre confiança:</p>
+
+    <ul>
+      <li><strong>Impossível de regenerar.</strong> Rodar de novo não reproduz o texto, porque o texto não veio de um processo — veio de uma pessoa, uma vez.</li>
+      <li><strong>Impossível de auditar.</strong> Não dá para discordar de uma frase cuja origem você não consegue inspecionar.</li>
+    </ul>
+
+    <p>A correção: toda conclusão passa a ser produzida por uma regra identificada, que carrega consigo os fatos que a dispararam.</p>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">II &middot; Forma</span>
+      <h2>O que todo achado carrega</h2>
+    </div>
+
+    <p>Dois campos são obrigatórios e nunca podem vir vazios:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Campo</th><th>O que é</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>rule</td><td>O identificador da regra que produziu o achado. É o que torna a conclusão regenerável.</td></tr>
+          <tr><td>evidence</td><td>A lista de fatos observados que dispararam a regra. É o que torna a conclusão discutível.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <span class="code-label">exemplo</span>
+<pre><code>Finding
+  rule:     telnet_aberto
+  severity: alta
+  host:     192.168.1.14
+  evidence:
+    - porta 23/tcp em estado open
+    - serviço confirmado por probe: "Linux telnetd"
+    - host responde a ARP na sub-rede local</code></pre>
+
+    <p>A interface sempre mostra a evidência ao lado da conclusão. Você pode discordar do programa com base exatamente no mesmo dado que ele usou — e essa é a definição operacional de uma ferramenta auditável.</p>
+
+    <div class="note note--rule">
+      <span class="note__label">Invariante</span>
+      <p>Todo <code>Finding</code> carrega <code>rule</code> e <code>evidence</code> não vazia. Conclusão sem evidência é proibida no projeto. A lista de achados vem ordenada por severidade decrescente.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">III &middot; Teste</span>
+      <h2>Positivo e negativo</h2>
+    </div>
+
+    <p>Toda regra de achado precisa ter caso positivo <strong>e</strong> caso negativo nos testes. Regra sem caso negativo não entra no projeto.</p>
+
+    <p>A exigência não é formalidade. Foi ela que impediu a regra <code>socks_proxy</code> de disparar em palpite: o caso positivo passava, e só o caso negativo revelou que ela acusava qualquer porta alta com serviço não identificado.</p>
+
+    <div class="table-wrap">
+      <table class="table--cases">
+        <thead>
+          <tr><th>Caso</th><th>O que prova</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Positivo</td><td>Que a regra dispara quando deve — que ela é útil</td></tr>
+          <tr><td>Negativo</td><td>Que a regra <em>não</em> dispara quando não deve — que ela é confiável</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Um falso positivo numa ferramenta de diagnóstico de rede não é um incômodo: é alguém investigando por horas um problema que não existe. A regra que acusa demais é pior do que a regra ausente, porque consome atenção sob a aparência de economizá-la.</p>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">IV &middot; Alcance</span>
+      <h2>Sobre o que as regras falam</h2>
+    </div>
+
+    <p>As regras de achado consomem o que os quatro coletores de leitura produziram:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Fonte</th><th>Alimenta regras sobre</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>a01 &middot; hosts</td><td>Hosts e fabricante &mdash; dispositivo desconhecido, MAC aleatório</td></tr>
+          <tr><td>a02 &middot; portas</td><td>Portas e confirmação de serviço &mdash; telnet aberto, banco alcançável pela rede</td></tr>
+          <tr><td>a03 &middot; sockets</td><td>Serviços locais &mdash; bind exposto que deveria ser loopback</td></tr>
+          <tr><td>a04 &middot; docker</td><td>Containers, redes e disco &mdash; ciclo de reinício, bridge órfã</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>O campo <code>status</code> de cada host e o campo <code>role</code> são <strong>derivados</strong> dos achados que citam aquele host — nunca texto escrito diretamente. O <code>role</code> vem sempre acompanhado do seu próprio campo <code>evidence</code>, pelo mesmo princípio.</p>
+  </section>
+
+  <nav class="next" aria-label="Navegação entre páginas">
+    <a class="next__link" href="coletores.html">
+      <span class="next__dir">Anterior</span>
+      <span class="next__title">&larr; Coletores</span>
+    </a>
+    <a class="next__link next__link--fwd" href="arquitetura.html">
+      <span class="next__dir">Próxima</span>
+      <span class="next__title">Arquitetura &rarr;</span>
+    </a>
+  </nav>
+
+  <footer>
+    <span><em>Sunna</em> &middot; Documentação</span>
+    <span>Outubro de 2026 &middot; MIT</span>
+  </footer>
+
+</div>
+</div>
+
+</body>
+</html>

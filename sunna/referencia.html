@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sunna — Contratos</title>
+<link rel="stylesheet" href="assets/sunna.css">
+<script src="assets/sunna.js" defer></script>
+</head>
+<body>
+
+<a class="skip" href="#conteudo">Pular para o conteúdo</a>
+
+<nav class="rail" aria-label="Índice da documentação">
+  <a class="rail__brand" href="index.html">SUNNA</a>
+  <p class="rail__group" id="g-guia">guia</p>
+  <ul class="rail__list" aria-labelledby="g-guia">
+    <li><a class="rail__link" href="index.html">Visão geral</a></li>
+    <li><a class="rail__link" href="inicio.html">Primeiros passos</a></li>
+    <li><a class="rail__link" href="coletores.html">Coletores</a></li>
+    <li><a class="rail__link" href="achados.html">Achados</a></li>
+    <li><a class="rail__link" href="arquitetura.html">Arquitetura</a></li>
+  </ul>
+  <p class="rail__group" id="g-ref">referência</p>
+  <ul class="rail__list" aria-labelledby="g-ref">
+    <li><a class="rail__link" href="referencia.html" aria-current="page">Contratos</a></li>
+  </ul>
+</nav>
+
+<div class="main">
+<div class="shell" id="conteudo">
+
+  <header class="page-head">
+    <p class="page-head__eyebrow">Referência &middot; para agentes</p>
+    <h1>Contratos</h1>
+    <p class="lede">Sunna em forma estruturada. O <code>Snapshot</code> descrito aqui é o mesmo objeto que a casca Tauri recebe pelo IPC e que a casca egui lê direto da memória: não há banco, não há persistência de varredura, não há versão serializada em disco para consultar depois.</p>
+  </header>
+
+  <div class="ornament" aria-hidden="true"><span>&#10042;</span></div>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">I &middot; Descritor</span>
+      <h2>Projeto</h2>
+    </div>
+    <span class="code-label">json</span>
+<pre><code>{
+  "name": "Sunna",
+  "former_name": "betterScan",
+  "renamed_on": "2026-09-29",
+  "kind": "network-mapper",
+  "summary": "Local network and service discovery with evidence-backed findings",
+  "platform": "linux",
+  "language": "rust",
+  "edition": "2021",
+  "license": "MIT",
+  "roots": {
+    "core":      "crates/core        — engine, no UI, present on every branch",
+    "app-egui":  "crates/app-egui    — branch main",
+    "app-tauri": "crates/app-tauri   — branch tauri, needs libwebkit2gtk-4.1-dev"
+  },
+  "run":  "cargo run -p sunna-egui",
+  "scan": "cargo run -p sunna-core --example scan [-- --json | --privileged]",
+  "spec_docs": "SPECS/00-brief.md .. SPECS/07-ui.md",
+  "spec_gate": "python3 tools/spec-gate.py"
+}</code></pre>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">II &middot; Snapshot</span>
+      <h2>A raiz</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Campo</th><th>Tipo</th><th>Regra</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>taken_at</td><td>string</td><td>ISO 8601 com offset local; momento em que a varredura terminou</td></tr>
+          <tr><td>privileged</td><td>bool</td><td><code>true</code> só se a descoberta rodou sob <code>pkexec</code></td></tr>
+          <tr><td>nic</td><td>Nic?</td><td>Interface da rota default; <code>None</code> apenas em snapshot de teste</td></tr>
+          <tr><td>gateway</td><td>string?</td><td>IPv4 do gateway da rota default</td></tr>
+          <tr><td>hosts</td><td>Host[]</td><td>ordenado por último octeto</td></tr>
+          <tr><td>sockets</td><td>LocalSocket[]</td><td>ordenado por alcance, depois por porta</td></tr>
+          <tr><td>containers</td><td>Container[]</td><td>vazio quando Docker está em <code>skipped</code></td></tr>
+          <tr><td>networks</td><td>DockerNetwork[]</td><td>só driver <code>bridge</code></td></tr>
+          <tr><td>disk</td><td>DiskBucket[]</td><td>uma linha por categoria do <code>docker system df</code></td></tr>
+          <tr><td>findings</td><td>Finding[]</td><td>ordenado por severidade decrescente</td></tr>
+          <tr><td>skipped</td><td>string[]</td><td>um texto por coletor que não rodou, com o motivo</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <span class="note__label">Leia sempre o skipped</span>
+      <p>Uma lista <code>containers</code> vazia pode significar duas coisas opostas: não há container nenhum, ou o daemon não respondeu. <code>skipped</code> é o único campo que distingue as duas. Um agente que ignora <code>skipped</code> vai relatar ausência onde havia cegueira.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">III &middot; Nic</span>
+      <h2>Interface</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Campo</th><th>Tipo</th><th>Regra</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>name</td><td>string</td><td>nome da interface da rota default</td></tr>
+          <tr><td>ipv4</td><td>string</td><td>endereço global IPv4</td></tr>
+          <tr><td>prefix</td><td>u8</td><td>tamanho do prefixo</td></tr>
+          <tr><td>mac</td><td>string?</td><td>minúsculo, separado por <code>:</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><code>cidr()</code> deriva a sub-rede a varrer. <code>/24</code> e <code>/16</code> são zerados corretamente; qualquer outro prefixo cai em <code>ip/prefix</code> e o nmap resolve.</p>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">IV &middot; Host</span>
+      <h2>Entidade central</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Campo</th><th>Tipo</th><th>Regra</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>ip</td><td>string</td><td>IPv4; chave única do host no snapshot</td></tr>
+          <tr><td>octet</td><td>u8</td><td>último octeto, derivado de <code>ip</code>; ordena a lista e rotula o mapa</td></tr>
+          <tr><td>hostname</td><td>string?</td><td>primeiro entre PTR do nmap e nome anunciado por mDNS</td></tr>
+          <tr><td>mac</td><td>string?</td><td>minúsculo; ausente quando não veio nem do ARP nem do nmap</td></tr>
+          <tr><td>vendor</td><td>string?</td><td><strong>sempre <code>None</code> se <code>mac_randomized</code></strong></td></tr>
+          <tr><td>mac_randomized</td><td>bool</td><td>bit de valor 2 do primeiro octeto do MAC ligado</td></tr>
+          <tr><td>discovery</td><td>Discovery[]</td><td>nunca vazio; toda origem que viu o host</td></tr>
+          <tr><td>ports</td><td>Port[]</td><td>só as portas que o scan retornou</td></tr>
+          <tr><td>mdns</td><td>MdnsService[]</td><td>serviços anunciados por este endereço</td></tr>
+          <tr><td>status</td><td>HostStatus</td><td>derivado dos findings que citam o host</td></tr>
+          <tr><td>role</td><td>string</td><td>papel inferido por regra, nunca texto escrito à mão</td></tr>
+          <tr><td>evidence</td><td>string[]</td><td>fatos observados que sustentam <code>role</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">V &middot; Port</span>
+      <h2>A regra que sustenta o resto</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Campo</th><th>Tipo</th><th>Regra</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>number</td><td>u16</td><td>&mdash;</td></tr>
+          <tr><td>proto</td><td>string</td><td><code>tcp</code> ou <code>udp</code></td></tr>
+          <tr><td>state</td><td>PortState</td><td><code>open</code> &middot; <code>filtered</code> &middot; <code>closed</code></td></tr>
+          <tr><td>service</td><td>string?</td><td>nome que o nmap deu, confirmado <em>ou não</em></td></tr>
+          <tr><td>version</td><td>string?</td><td>produto e versão, só quando o <code>-sV</code> respondeu</td></tr>
+          <tr><td>confirmed</td><td>bool</td><td><code>true</code> só quando <code>method="probe"</code> no XML</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note note--rule">
+      <span class="note__label">Nunca leia service sem checar confirmed</span>
+      <p><code>Port::label()</code> devolve <code>"não identificado"</code> quando <code>confirmed</code> é falso. O campo <code>service</code> continua preenchido com o chute do nmap — ele existe para diagnóstico, não para exibição. Um agente que lê <code>service</code> ignorando <code>confirmed</code> vai afirmar "X11" numa porta 6001 que roda WebSocket.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">VI &middot; Socket e mDNS</span>
+      <h2>Entidades locais</h2>
+    </div>
+
+    <h3>LocalSocket</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Campo</th><th>Tipo</th><th>Regra</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>proto</td><td>string</td><td><code>tcp</code> ou <code>udp</code></td></tr>
+          <tr><td>port</td><td>u16</td><td>&mdash;</td></tr>
+          <tr><td>bind</td><td>string</td><td>sem colchetes e sem sufixo <code>%iface</code></td></tr>
+          <tr><td>reach</td><td>Reach</td><td>ver tabela abaixo</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Reach</th><th>Quando o bind é</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>lan</td><td><code>0.0.0.0</code>, <code>::</code>, <code>*</code></td></tr>
+          <tr><td>loopback</td><td><code>127.*</code>, <code>::1</code></td></tr>
+          <tr><td>multicast</td><td><code>224.*</code>, <code>ff*</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>MdnsService</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Campo</th><th>Tipo</th><th>Regra</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>host</td><td>string</td><td>endereço anunciado; casa com <code>Host.ip</code></td></tr>
+          <tr><td>kind</td><td>string</td><td>tipo do serviço, ex. <code>_openclaw-gw._tcp</code></td></tr>
+          <tr><td>port</td><td>u16</td><td>&mdash;</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">VII &middot; Invariantes</span>
+      <h2>O que não muda</h2>
+    </div>
+
+    <p>Vêm das especificações. Não são detalhes de implementação, e não devem ser contornadas por quem gera código para este projeto.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Invariante</th><th>Regra</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Processo externo</td><td>sempre por <code>cmd::run*</code> com vetor de argumentos; nenhum shell, nenhuma interpolação</td></tr>
+          <tr><td>Parsing</td><td>só saída estruturada: <code>-oX</code>, <code>--format json</code>, <code>ip -j</code></td></tr>
+          <tr><td>Serviço</td><td>afirmado só com <code>method="probe"</code>; caso contrário "não identificado"</td></tr>
+          <tr><td>PID ausente</td><td>renderiza "requer root"; nunca deduzido por nome no <code>ps</code></td></tr>
+          <tr><td>MAC aleatório</td><td>zera o fabricante</td></tr>
+          <tr><td>Coletor ausente</td><td><code>Snapshot::skipped</code> com motivo; seção vazia muda é proibida</td></tr>
+          <tr><td>Finding</td><td><code>rule</code> e <code>evidence</code> não vazia, sempre</td></tr>
+          <tr><td>Alvo da varredura</td><td>só a sub-rede da rota default; CIDR digitado é validado antes de virar argumento</td></tr>
+          <tr><td>Disparo</td><td>sempre por ação do usuário; sem background, sem agendamento, sem boot</td></tr>
+          <tr><td>Escopo</td><td>não explora, não autentica, não testa credencial</td></tr>
+          <tr><td>Fluxo</td><td><code>Msg</code> &rarr; <code>update</code> &rarr; <code>Model</code> &rarr; View; <code>update</code> é a única que escreve</td></tr>
+          <tr><td>Teste de parser</td><td>sobre fixture de saída real, com MAC e hostname anonimizados</td></tr>
+          <tr><td>Teste de regra</td><td>caso positivo <strong>e</strong> negativo; sem o negativo não entra</td></tr>
+          <tr><td>Teste existente</td><td>imutável</td></tr>
+          <tr><td>Dependência nova</td><td>só se listada em <code>00-brief.md</code> ou <code>07-ui.md</code></td></tr>
+          <tr><td>Beholder</td><td>somente leitura; nenhum arquivo pode ser modificado</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">VIII &middot; Persistência</span>
+      <h2>A única exceção</h2>
+    </div>
+
+    <p>Sunna não guarda histórico entre execuções. Nenhum snapshot é serializado para disco, nenhum resultado anterior é reexibido.</p>
+
+    <span class="code-label">a exceção</span>
+<pre><code>$XDG_CONFIG_HOME/sunna/apps.json</code></pre>
+
+    <p>Guarda apenas nomes de aplicação buscados que foram confirmados, e rótulos customizados escritos pelo usuário. Existe para não exigir a mesma digitação a cada abertura. É exceção estreita e registrada como tal na especificação.</p>
+
+    <div class="note">
+      <span class="note__label">Carregar não é varrer</span>
+      <p>Ler <code>apps.json</code> ao abrir a casca não viola a regra de "sem varredura automática": carregar termos salvos é leitura de configuração local, não emissão de pacote na rede.</p>
+    </div>
+  </section>
+
+  <nav class="next" aria-label="Navegação entre páginas">
+    <a class="next__link" href="arquitetura.html">
+      <span class="next__dir">Anterior</span>
+      <span class="next__title">&larr; Arquitetura</span>
+    </a>
+    <a class="next__link next__link--fwd" href="index.html">
+      <span class="next__dir">Voltar ao</span>
+      <span class="next__title">Começo &rarr;</span>
+    </a>
+  </nav>
+
+  <footer>
+    <span><em>Sunna</em> &middot; Documentação</span>
+    <span>Outubro de 2026 &middot; MIT</span>
+  </footer>
+
+</div>
+</div>
+
+</body>
+</html>

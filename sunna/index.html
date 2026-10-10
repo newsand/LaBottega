@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sunna — Visão geral</title>
+<link rel="stylesheet" href="assets/sunna.css">
+<script src="assets/sunna.js" defer></script>
+</head>
+<body>
+
+<a class="skip" href="#conteudo">Pular para o conteúdo</a>
+
+<nav class="rail" aria-label="Índice da documentação">
+  <a class="rail__brand" href="index.html">SUNNA</a>
+  <p class="rail__group" id="g-guia">guia</p>
+  <ul class="rail__list" aria-labelledby="g-guia">
+    <li><a class="rail__link" href="index.html" aria-current="page">Visão geral</a></li>
+    <li><a class="rail__link" href="inicio.html">Primeiros passos</a></li>
+    <li><a class="rail__link" href="coletores.html">Coletores</a></li>
+    <li><a class="rail__link" href="achados.html">Achados</a></li>
+    <li><a class="rail__link" href="arquitetura.html">Arquitetura</a></li>
+  </ul>
+  <p class="rail__group" id="g-ref">referência</p>
+  <ul class="rail__list" aria-labelledby="g-ref">
+    <li><a class="rail__link" href="referencia.html">Contratos</a></li>
+  </ul>
+</nav>
+
+<div class="main">
+<div class="shell" id="conteudo">
+
+  <header class="hero">
+    <div class="hero__plate">
+      <div class="hero__image" role="img" aria-label="Sunna, deusa solar coroada por um halo de raios, sustentando sobre montanhas uma teia de nós e arestas luminosas; moldura ornamental com runas nas bordas"></div>
+      <div class="hero__veil" aria-hidden="true"></div>
+    </div>
+
+    <p class="page-head__eyebrow">Mapa de rede &middot; Desktop Linux</p>
+    <h1>Sunna</h1>
+    <p class="lede">A rede que esta máquina enxerga e os serviços que ela mesma expõe. Sunna varre a sub-rede da rota default, lê os sockets em escuta, pergunta ao Docker o que está rodando — e de tudo que coletou, regras nomeadas derivam achados. Nenhuma conclusão aparece sem a evidência que a sustenta ao lado.</p>
+
+    <div class="hero__meta">
+      <div>
+        <span class="hero__meta-label">Linguagem</span>
+        <span class="hero__meta-value">Rust 2021</span>
+      </div>
+      <div>
+        <span class="hero__meta-label">Cascas</span>
+        <span class="hero__meta-value">egui &middot; Tauri</span>
+      </div>
+      <div>
+        <span class="hero__meta-label">Plataforma</span>
+        <span class="hero__meta-value">Linux</span>
+      </div>
+      <div>
+        <span class="hero__meta-label">Antes</span>
+        <span class="hero__meta-value">betterScan</span>
+      </div>
+      <div>
+        <span class="hero__meta-label">Licença</span>
+        <span class="hero__meta-value">MIT</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="ornament" aria-hidden="true"><span>&#10042;</span></div>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">I &middot; Coleta</span>
+      <h2>O que ela enxerga</h2>
+    </div>
+
+    <p>Seis coletores independentes. Nenhum derruba a varredura ao faltar: coletor indisponível entra em <code>skipped</code> com o motivo escrito, e a interface diz isso em vez de mostrar seção vazia.</p>
+
+    <div class="grid">
+      <a class="card" href="coletores.html#hosts">
+        <h4>Hosts da LAN</h4>
+        <p>Sweep do nmap, tabela ARP do kernel e anúncios mDNS — três fontes que isoladamente são insuficientes.</p>
+      </a>
+      <a class="card" href="coletores.html#portas">
+        <h4>Portas e serviços</h4>
+        <p>Estado por porta e, quando o <code>-sV</code> respondeu, o produto real por trás dela.</p>
+      </a>
+      <a class="card" href="coletores.html#sockets">
+        <h4>Serviços desta máquina</h4>
+        <p>O que escuta aqui, com PID e com a resposta à pergunta que importa: quem consegue conectar.</p>
+      </a>
+      <a class="card" href="coletores.html#docker">
+        <h4>Estado do Docker</h4>
+        <p>Containers, redes bridge e ocupação de disco — a maior fonte de interfaces numa máquina de desenvolvimento.</p>
+      </a>
+      <a class="card" href="coletores.html#aplicacao">
+        <h4>Identificação de aplicação</h4>
+        <p>Não "8000/tcp open http", mas <em>Coolify</em> — lido do <code>&lt;title&gt;</code> da resposta, sem catálogo de nomes.</p>
+      </a>
+      <a class="card" href="coletores.html#acoes">
+        <h4>Ações no Docker</h4>
+        <p>A única parte que escreve: parar, remover, limpar. Todo o resto do produto é leitura.</p>
+      </a>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">II &middot; Princípio</span>
+      <h2>A evidência ao lado da conclusão</h2>
+    </div>
+
+    <p>Sunna tem a forma atual por causa de uma crítica a si mesma. A versão anterior do painel era um instantâneo com prosa escrita à mão sobre endereços concretos — impossível de regenerar e impossível de auditar.</p>
+
+    <p>A correção virou regra: toda conclusão vem de uma <strong>regra nomeada</strong>, carrega o identificador dessa regra, e traz junto os fatos que a dispararam. Você pode discordar do programa com base exatamente no mesmo dado que ele usou.</p>
+
+    <span class="code-label">a forma de um achado</span>
+<pre><code>Finding
+  rule:     telnet_aberto
+  severity: alta
+  host:     192.168.1.14
+  evidence:
+    - porta 23/tcp em estado open
+    - serviço confirmado por probe: "Linux telnetd"
+    - host responde a ARP na sub-rede local</code></pre>
+
+    <p>O campo <code>evidence</code> nunca pode vir vazio. É invariante do projeto, não convenção de escrita. <a href="achados.html">Como as regras funcionam &rarr;</a></p>
+  </section>
+
+  <section class="section">
+    <div class="section__head">
+      <span class="section__number">III &middot; Natureza</span>
+      <h2>Sem instantâneo</h2>
+    </div>
+
+    <p>Cada varredura roda de novo. Não existe dado embutido no binário, não existe cache de resultado anterior, não existe tela que mostre o que era verdade ontem.</p>
+
+    <p>Dado velho é para ser recoletado, não exibido — foi decisão explícita de quem pediu o projeto. A única coisa que sobrevive ao fechamento do programa são os nomes de aplicação que você confirmou e os rótulos que você escreveu, guardados em <code>$XDG_CONFIG_HOME/sunna/apps.json</code> apenas para você não ter que redigitar.</p>
+
+    <div class="note">
+      <span class="note__label">O que ela não é</span>
+      <p>Sunna não explora, não autentica, não testa credencial e não envia payload além do que o <code>nmap -sV</code> precisa para identificar um serviço. Não há varredura em segundo plano, agendada, nem no boot: toda varredura parte de uma ação sua.</p>
+    </div>
+  </section>
+
+  <nav class="next" aria-label="Navegação entre páginas">
+    <a class="next__link next__link--fwd" href="inicio.html">
+      <span class="next__dir">Próxima</span>
+      <span class="next__title">Primeiros passos &rarr;</span>
+    </a>
+  </nav>
+
+  <footer>
+    <span><em>Sunna</em> &middot; Documentação</span>
+    <span>Outubro de 2026 &middot; MIT</span>
+  </footer>
+
+</div>
+</div>
+
+</body>
+</html>
