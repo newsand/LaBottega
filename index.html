@@ -43,6 +43,16 @@
   --rule:       rgba(201, 162, 39, 0.26);
   --rule-faint: rgba(201, 162, 39, 0.11);
 
+  /* — Véu sobre a gravura do frontispício —
+     Três paradas do mesmo pergaminho: a pintura aparece em cima
+     e já chegou ao fundo sólido quando o texto começa. */
+  --veil-1: rgba(36, 28, 20, 0.62);
+  --veil-2: rgba(36, 28, 20, 0.88);
+  --veil-3: rgba(36, 28, 20, 0.97);
+
+  /* — Parallax contido: fração da rolagem que a gravura percorre — */
+  --parallax: 0.90;
+
   /* — Espaço (base 8) — */
   --s1: 4px;  --s2: 8px;   --s3: 12px;  --s4: 16px;
   --s6: 24px; --s8: 32px;  --s12: 48px; --s16: 64px;
@@ -116,6 +126,7 @@ a { color: inherit; }
 
 .front {
   min-height: 100svh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -125,6 +136,27 @@ a { color: inherit; }
   position: relative;
   z-index: 2;
 }
+
+/* A gravura do artífice: anda a --parallax da rolagem, só transform.
+   Mais alta que o frontispício para o deslocamento nunca abrir fresta. */
+.front__art {
+  /* Ancorada no topo: a folga para o parallax sobra embaixo, porque a
+     janela visível nunca alcança a fresta — ela ficaria acima de 0.18·S,
+     e a rolagem já passou de S. Assim o alto da gravura não é cortado. */
+  position: absolute; left: 0; right: 0; top: 0; height: 122%;
+  z-index: 0;
+  background-image: url('assets/artifice.webp');
+  background-size: cover; background-position: 50% 0%;
+  will-change: transform;
+}
+.front__veil {
+  position: absolute; inset: 0; z-index: 0;
+  background: linear-gradient(to bottom,
+    var(--veil-1) 0%, var(--veil-2) 40%, var(--veil-3) 72%, var(--ground) 100%);
+}
+/* O texto sobe acima da gravura. Sem isto o conteúdo estático
+   ficaria atrás da camada posicionada. */
+.front > :not(.front__art):not(.front__veil) { position: relative; z-index: 1; }
 
 .emblem { width: min(230px, 46vw); height: auto; margin: auto auto var(--s8); }
 
@@ -254,11 +286,40 @@ a { color: inherit; }
 .sec__head { text-align: center; margin-bottom: var(--s24); }
 
 .sec__num {
+  position: relative;
+  display: block; margin-bottom: var(--s4);
+}
+
+/* ── Iluminura: cartela em volta do algarismo da seção ──
+   Os dois filetes laterais crescem do centro para fora, que é o
+   "Ornamento" do catálogo do MASTER, realizado aqui dentro. */
+.illum {
+  display: block; margin: 0 auto;
+  width: 212px; height: auto;
+  color: var(--gold-deep);
+}
+.illum [data-draw] {
+  stroke-dasharray: var(--len, 300);
+  stroke-dashoffset: var(--len, 300);
+}
+.illum [data-ink] { opacity: 0; }
+.sec__head.is-in .illum [data-draw] {
+  animation: draw var(--t-draw) var(--ease) forwards;
+  animation-delay: var(--d, 0ms);
+}
+.sec__head.is-in .illum [data-ink] {
+  animation: emblem-in var(--t-reveal) var(--ease) forwards;
+  animation-delay: var(--d, 0ms);
+}
+.sec__rom {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
   font-family: var(--display);
   font-size: 0.95rem; letter-spacing: 0.4em;
   color: var(--gold-deep);
-  display: block; margin-bottom: var(--s4);
+  text-indent: 0.4em;
 }
+
 
 .sec__title {
   font-family: var(--display);
@@ -496,6 +557,8 @@ a { color: inherit; }
   .plates { gap: var(--s8); }
   .tenet { grid-template-columns: var(--s8) 1fr; gap: var(--s4); }
   .tenet__n { font-size: 1.1rem; }
+  .front__art { background-image: url('assets/artifice-sm.webp'); }
+  .illum { width: 168px; }
   .front__meta { gap: var(--s2) var(--s4); }
   .front__meta span + span::before { display: none; }
 }
@@ -505,6 +568,11 @@ a { color: inherit; }
    ============================================================ */
 
 @media (prefers-reduced-motion: reduce) {
+  /* A gravura para, mas continua lá; a iluminura chega desenhada. */
+  .front__art { transform: none !important; }
+  .illum [data-draw] { stroke-dashoffset: 0; }
+  .illum [data-ink] { opacity: 1; }
+
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-delay: 0ms !important;
@@ -526,6 +594,9 @@ a { color: inherit; }
 
 <!-- ══════════════════ FRONTISPÍCIO ══════════════════ -->
 <header class="front">
+
+  <div class="front__art" id="frontArt" aria-hidden="true"></div>
+  <div class="front__veil" aria-hidden="true"></div>
 
   <svg class="emblem" viewBox="0 0 200 200" fill="none" aria-hidden="true">
     <!-- Rosa de oito pontas: a bússola do ofício -->
@@ -591,7 +662,21 @@ a { color: inherit; }
   <div class="shell">
 
     <div class="sec__head" data-reveal>
-      <span class="sec__num">I</span>
+      <span class="sec__num">
+        <svg class="illum" viewBox="0 0 212 40" fill="none" aria-hidden="true">
+          <path data-draw style="--len:132;--d:0ms" d="M106 7 L131 20 L106 33 L81 20 Z"
+                stroke="currentColor" stroke-width="1"/>
+          <path data-draw style="--len:116;--d:90ms" d="M81 20 H23 M131 20 H189"
+                stroke="currentColor" stroke-width="1"/>
+          <path data-draw style="--len:150;--d:180ms"
+                d="M57 20 q-9 -10 -19 -8 q3 11 19 8 M57 20 q-9 10 -19 8 q3 -11 19 -8
+                   M155 20 q9 -10 19 -8 q-3 11 -19 8 M155 20 q9 10 19 8 q-3 -11 -19 -8"
+                stroke="var(--gold)" stroke-width="0.9"/>
+          <circle data-ink style="--d:900ms" cx="19" cy="20" r="1.8" fill="var(--gold)"/>
+          <circle data-ink style="--d:900ms" cx="193" cy="20" r="1.8" fill="var(--gold)"/>
+        </svg>
+        <span class="sec__rom">I</span>
+      </span>
       <h2 class="sec__title">As pranchas</h2>
       <p class="sec__lede">Cada uma abre a sua própria documentação — escrita a partir do código e das especificações, não do arquivo leia-me.</p>
     </div>
@@ -753,7 +838,21 @@ a { color: inherit; }
     </div>
 
     <div class="sec__head" data-reveal>
-      <span class="sec__num">II</span>
+      <span class="sec__num">
+        <svg class="illum" viewBox="0 0 212 40" fill="none" aria-hidden="true">
+          <path data-draw style="--len:132;--d:0ms" d="M106 7 L131 20 L106 33 L81 20 Z"
+                stroke="currentColor" stroke-width="1"/>
+          <path data-draw style="--len:116;--d:90ms" d="M81 20 H23 M131 20 H189"
+                stroke="currentColor" stroke-width="1"/>
+          <path data-draw style="--len:150;--d:180ms"
+                d="M57 20 q-9 -10 -19 -8 q3 11 19 8 M57 20 q-9 10 -19 8 q3 -11 19 -8
+                   M155 20 q9 -10 19 -8 q-3 11 -19 8 M155 20 q9 10 19 8 q-3 -11 -19 -8"
+                stroke="var(--gold)" stroke-width="0.9"/>
+          <circle data-ink style="--d:900ms" cx="19" cy="20" r="1.8" fill="var(--gold)"/>
+          <circle data-ink style="--d:900ms" cx="193" cy="20" r="1.8" fill="var(--gold)"/>
+        </svg>
+        <span class="sec__rom">II</span>
+      </span>
       <h2 class="sec__title">O ofício</h2>
     </div>
 
@@ -777,7 +876,21 @@ a { color: inherit; }
     </div>
 
     <div class="sec__head" data-reveal>
-      <span class="sec__num">III</span>
+      <span class="sec__num">
+        <svg class="illum" viewBox="0 0 212 40" fill="none" aria-hidden="true">
+          <path data-draw style="--len:132;--d:0ms" d="M106 7 L131 20 L106 33 L81 20 Z"
+                stroke="currentColor" stroke-width="1"/>
+          <path data-draw style="--len:116;--d:90ms" d="M81 20 H23 M131 20 H189"
+                stroke="currentColor" stroke-width="1"/>
+          <path data-draw style="--len:150;--d:180ms"
+                d="M57 20 q-9 -10 -19 -8 q3 11 19 8 M57 20 q-9 10 -19 8 q3 -11 19 -8
+                   M155 20 q9 -10 19 -8 q-3 11 -19 8 M155 20 q9 10 19 8 q-3 -11 -19 -8"
+                stroke="var(--gold)" stroke-width="0.9"/>
+          <circle data-ink style="--d:900ms" cx="19" cy="20" r="1.8" fill="var(--gold)"/>
+          <circle data-ink style="--d:900ms" cx="193" cy="20" r="1.8" fill="var(--gold)"/>
+        </svg>
+        <span class="sec__rom">III</span>
+      </span>
       <h2 class="sec__title">Preceitos da casa</h2>
       <p class="sec__lede">Valem para as quatro peças, e são o motivo de elas se parecerem apesar de não terem nada em comum.</p>
     </div>
@@ -870,6 +983,36 @@ a { color: inherit; }
   }, { rootMargin: '0px 0px -12% 0px', threshold: 0.12 });
 
   alvos.forEach(function (el) { obs.observe(el); });
+})();
+
+/* ============================================================
+   Parallax contido do frontispício.
+   A gravura percorre --parallax da rolagem. Uma leitura por
+   quadro, e só transform: nada aqui toca em layout.
+   O fator mora no CSS para o MASTER continuar sendo a fonte.
+   ============================================================ */
+(function () {
+  var art = document.getElementById('frontArt');
+  if (!art) return;
+
+  var parado = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (parado.matches) return;
+
+  var fator = parseFloat(
+    getComputedStyle(document.documentElement).getPropertyValue('--parallax')
+  );
+  if (!(fator > 0)) return;
+
+  var preso = false;
+  function quadro() {
+    preso = false;
+    art.style.transform = 'translate3d(0,' + (window.scrollY * fator).toFixed(2) + 'px,0)';
+  }
+  window.addEventListener('scroll', function () {
+    if (!preso) { preso = true; requestAnimationFrame(quadro); }
+  }, { passive: true });
+
+  quadro();
 })();
 </script>
 

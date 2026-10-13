@@ -49,6 +49,20 @@ Luminância do fundo: **1,2%**. Penumbra, não preto — a diferença se vê ao 
 
 ---
 
+### Véu da gravura
+O frontispício tem uma pintura ao fundo. O véu é o mesmo pergaminho em três paradas:
+a gravura aparece no alto e já chegou ao fundo sólido antes de o texto começar.
+
+| token | valor | papel |
+|---|---|---|
+| `--veil-1` | `rgba(36, 28, 20, 0.62)` | topo — a pintura respira |
+| `--veil-2` | `rgba(36, 28, 20, 0.88)` | 40% — o título já está sobre pergaminho |
+| `--veil-3` | `rgba(36, 28, 20, 0.97)` | 72% — restam vestígios |
+
+Medido com a pintura real em todo o curso do parallax: o pior fundo que cada texto
+encontra dá 5,02:1 (kicker), 10,53:1 (título), 8,51:1 (subtítulo), 4,96:1 (metadados)
+e 5,04:1 (chamada de rolagem). Mexer nestes três valores obriga a refazer a conta.
+
 ## Tipografia
 
 ### Display — Cormorant Garamond
@@ -98,6 +112,7 @@ Seções usam `--s40` (160px) de respiro vertical em desktop, `--s24` (96px) em 
 | `--t-reveal` | 900ms | entrada por rolagem |
 | `--t-draw` | 1600ms | emblema se desenhando |
 | `--stagger` | 90ms | entre pranchas |
+| `--parallax` | 0.90 | fração da rolagem que a gravura do frontispício percorre |
 
 A curva desacelera forte no fim: é o que produz a sensação de peso parando com firmeza. **Proibido**: `cubic-bezier` com sobressalto, `bounce`, `elastic`, rotação, e qualquer coisa abaixo de 300ms — pressa é o oposto da tese.
 
@@ -109,6 +124,11 @@ A curva desacelera forte no fim: é o que produz a sensação de peso parando co
 5. **Ornamento** — os dois filetes crescem do centro para fora, `scaleX`
 6. **Prancha em hover** — moldura dupla acende, halo do SVG aparece, traço troca para `--gold-bright`, elevação de 5px, seta avança 5px
 7. **Capitular** — flutua à esquerda do primeiro parágrafo do ofício
+8. **Parallax** — a gravura do frontispício anda `--parallax` da rolagem, em
+   `translate3d` dentro de `requestAnimationFrame`. Ancorada no topo: a folga sobra
+   embaixo, porque a fresta ficaria acima de `0.18·S` e a janela já passou de `S`
+9. **Cartela** — os dois filetes laterais crescem do centro para fora e as volutas
+   fecham depois, em `--t-draw`, escalonadas de 0 a 180ms (`--stagger` dobrado)
 
 O escalonamento vem do CSS, pela variável `--delay`. O script só marca `is-in` e para de observar — a cascata continua sendo decisão de estilo, não de código.
 
@@ -127,6 +147,16 @@ Moldura dupla: borda externa no elemento, borda interna recuada em `--s3` via `:
 | ativo | sobe só 2px — confirma o toque |
 | pendente | opacidade 0.74, seta em `--ink-4` |
 
+### Cartela (`.sec__num` + `.illum`)
+Iluminura em volta do algarismo da seção: losango central, dois filetes laterais,
+quatro volutas e dois pontos nas pontas. 212px de largura, 168px abaixo de 860px.
+Traço de 0.9 a 1, `currentColor` herdando `--gold-deep`, volutas em `--gold`.
+O algarismo é `.sec__rom`, sobreposto em `grid/place-items:center` — a cartela não
+o contém no SVG, para o texto continuar sendo texto.
+
+Só nas três articulações de seção. **Não entra no corpo do texto, nas pranchas nem
+nos preceitos**: a iluminura marca junta de estrutura, não decora parágrafo.
+
 ### Preceito (`.tenet`)
 Grade de duas colunas: numeral romano alinhado à direita em `--gold-deep`, e o par título/descrição. Separados por `--rule-faint`, sem filete no último.
 
@@ -134,7 +164,13 @@ Grade de duas colunas: numeral romano alinhado à direita em `--gold-deep`, e o 
 
 ## Gravura vetorial
 
-As estampas são **SVG desenhado à mão no documento**, não imagem raster. A técnica é a certa para o tema — gravura é como o Renascimento reproduzia imagem — e tem três vantagens práticas: escala sem perder traço, pesa quilobytes, e anima.
+As estampas são **SVG desenhado à mão no documento**, não imagem raster.
+
+> **Uma exceção, deliberada:** a pintura do artífice no frontispício
+> (`assets/artifice.webp`) é raster. Ela não é estampa — não marca nem identifica
+> peça alguma; é atmosfera atrás do véu. Toda estampa continua sendo SVG. Se um dia
+> uma segunda imagem raster aparecer fora do frontispício, esta regra foi quebrada,
+> não estendida. A técnica é a certa para o tema — gravura é como o Renascimento reproduzia imagem — e tem três vantagens práticas: escala sem perder traço, pesa quilobytes, e anima.
 
 | peça | motivo |
 |---|---|
