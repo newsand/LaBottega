@@ -605,13 +605,44 @@ footer {
   .hero__image [data-draw] { stroke-dashoffset: 0; }
   .hero__image [data-ink] { opacity: 1; }
 }
+
+.backlink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 44px;
+  padding-right: var(--space-4);
+  margin-right: var(--space-1);
+  border-right: 1px solid var(--rule-gold);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  text-decoration: none;
+  transition: color var(--t-fast) var(--ease);
+}
+.backlink:hover { color: var(--gold-300); }
+@media (max-width: 640px) {
+  .backlink__t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .backlink { padding-right: var(--space-2); margin-right: 0; }
+}
+
+.hero__meta-value a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule-gold);
+  transition: border-color var(--t-fast) var(--ease);
+}
+.hero__meta-value a:hover { border-bottom-color: currentColor; }
 </style>
 </head>
 <body>
 
 <header class="bar">
   <div class="bar__inner">
-    <a class="brand" href="#topo">Dedup</a>
+    <a class="backlink" href="../index.html#pranchas" aria-label="Voltar para La Bottega"><span aria-hidden="true">&larr;</span><span class="backlink__t">La Bottega</span></a>
+  <a class="brand" href="#topo">Dedup</a>
     <span class="bar__spacer"></span>
     <div class="seg" role="group" aria-label="Modo de leitura"><button type="button" data-mode="dev" aria-pressed="true">Dev</button><button type="button" data-mode="ia" aria-pressed="false">IA</button></div>
   </div>
@@ -724,6 +755,10 @@ footer {
       <div>
         <span class="hero__meta-label">Licença</span>
         <span class="hero__meta-value">MIT</span>
+      </div>
+      <div>
+        <span class="hero__meta-label">Repositório</span>
+        <span class="hero__meta-value"><a href="https://github.com/newsand/Dedup" target="_blank" rel="noopener">newsand/Dedup</a></span>
       </div>
     </div>
   </div>

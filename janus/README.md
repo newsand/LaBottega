@@ -12,6 +12,10 @@ exatamente o padrão usado na integração de referência **crazy-back + crazy-f
 > qualquer dado de produto vivem **no seu backend**, nunca aqui. Ver
 > `../janus/AUTH-MVP.md` §1 para o contrato de produto completo.
 
+## Pagina Documentacao
+
+{URL e referencia rapida}
+
 ## Sumário
 
 1. [Arquitetura da integração](#1-arquitetura-da-integração)

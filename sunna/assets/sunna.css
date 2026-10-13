@@ -101,6 +101,18 @@ body {
   z-index: 20;
 }
 
+.rail__back {
+  display: block;
+  margin: 0 var(--space-6) var(--space-4);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  text-decoration: none;
+}
+.rail__back:hover { color: var(--sun-300); }
+
 .rail__brand {
   display: block;
   font-family: var(--serif);
@@ -226,6 +238,13 @@ body {
   color: var(--sun-400);
   font-size: 0.97rem;
 }
+
+.hero__meta-value a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule-sun);
+}
+.hero__meta-value a:hover { border-bottom-color: currentColor; }
 
 .page-head { margin-bottom: var(--space-16); }
 
@@ -596,6 +615,18 @@ footer em { font-family: var(--serif); color: var(--sun-500); font-style: italic
     gap: var(--space-4);
     overflow-x: auto;
     overflow-y: hidden;
+  }
+
+  /* No mobile o rail vira faixa horizontal rolável e o navegador rola ate a
+     pagina atual. O retorno fica grudado na borda esquerda para nao sumir. */
+  .rail__back {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    margin: 0;
+    padding: 0 var(--space-4) var(--space-4);
+    white-space: nowrap;
+    background: var(--navy-800);
   }
 
   .rail__brand {
