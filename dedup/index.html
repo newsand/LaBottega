@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dedup — Documentação</title>
+<script>(function(){var m=null;try{m=localStorage.getItem('dedup-guia-mode')}catch(e){}document.documentElement.setAttribute('data-mode',m==='ia'?'ia':'dev')})()</script>
 <style>
 /* ============================================================
    DEDUP — Design System
@@ -218,7 +219,7 @@ body {
    ABAS
    ============================================================ */
 
-.tabs {
+.bar {
   position: sticky;
   top: 0;
   z-index: 10;
@@ -227,44 +228,74 @@ body {
   border-bottom: 1px solid var(--rule-gold);
 }
 
-.tabs__inner {
+.bar__inner {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 0 var(--space-12);
+  padding: var(--space-3) var(--space-12);
   display: flex;
-  gap: var(--space-8);
+  align-items: center;
+  gap: var(--space-4);
 }
 
-.tab {
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  padding: var(--space-6) var(--space-2) calc(var(--space-6) - 2px);
+.brand {
   font-family: var(--serif);
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  color: var(--ink-500);
-  cursor: pointer;
-  transition: color var(--t-normal) var(--ease),
-              border-color var(--t-normal) var(--ease);
   letter-spacing: 0.02em;
+  color: var(--gold-300);
+  text-decoration: none;
 }
+.bar__spacer { flex: 1; }
 
-.tab:hover { color: var(--gold-400); }
-.tab:focus-visible {
-  outline: 2px solid var(--stone-600);
-  outline-offset: 3px;
+/* Troca de modo (Dev · IA) — mesmo mecanismo do Janus */
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--rule-gold);
   border-radius: var(--radius-sm);
+  overflow: hidden;
 }
-.tab:active { color: var(--gold-500); }
-.tab[aria-selected="true"] {
+.seg button {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: var(--space-3) var(--space-4);
+  min-height: 44px;
+  background: transparent;
+  color: var(--ink-500);
+  border: 0;
+  cursor: pointer;
+  transition: color var(--t-normal) var(--ease);
+}
+.seg button:hover { color: var(--gold-300); }
+.seg button:active { transform: translateY(1px); }
+.seg button:focus-visible {
+  outline: 2px solid var(--stone-600);
+  outline-offset: -2px;
+}
+.seg button[aria-pressed="true"] {
   color: var(--gold-500);
-  border-bottom-color: var(--gold-500);
+  box-shadow: inset 0 0 0 1px var(--gold-500);
 }
-.tab:disabled { color: var(--ink-700); cursor: not-allowed; }
 
+/* Porta: as duas folhas que se fecham na troca de modo */
+.door {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  z-index: 50;
+  background: var(--ground-800);
+  border: 1px solid var(--gold-500);
+  pointer-events: none;
+  display: none;
+}
+.door.l { left: 0; }
+.door.r { right: 0; }
+
+/* O painel visível vem de data-mode no <html> (padrão: dev) */
 .panel { display: none; padding: var(--space-24) 0; }
-.panel[data-active="true"] {
+:root:not([data-mode="ia"]) #panel-dev,
+:root[data-mode="ia"] #panel-ai {
   display: block;
   animation: panel-enter var(--t-slow) var(--ease);
 }
@@ -548,12 +579,12 @@ footer {
    ============================================================ */
 
 @media (max-width: 860px) {
-  .shell, .tabs__inner, .hero__content, .footer__inner {
+  .shell, .bar__inner, .hero__content, .footer__inner {
     padding-left: var(--space-6); padding-right: var(--space-6);
   }
   .panel { padding: var(--space-16) 0; }
   .section { margin-bottom: var(--space-16); }
-  .tabs__inner { gap: var(--space-6); }
+  .bar__inner { gap: var(--space-3); }
   .hero__content { margin-top: calc(var(--space-8) * -1); }
 }
 
@@ -569,7 +600,7 @@ footer {
     transition-duration: 0.01ms !important;
   }
   .card:hover { transform: none; }
-  .panel[data-active="true"] { animation: none; }
+  .panel { animation: none !important; }
   /* A gravura chega pronta, sem se desenhar. */
   .hero__image [data-draw] { stroke-dashoffset: 0; }
   .hero__image [data-ink] { opacity: 1; }
@@ -578,8 +609,17 @@ footer {
 </head>
 <body>
 
+<header class="bar">
+  <div class="bar__inner">
+    <a class="brand" href="#topo">Dedup</a>
+    <span class="bar__spacer"></span>
+    <div class="seg" role="group" aria-label="Modo de leitura"><button type="button" data-mode="dev" aria-pressed="true">Dev</button><button type="button" data-mode="ia" aria-pressed="false">IA</button></div>
+  </div>
+</header>
+<div class="door l" id="doorL" aria-hidden="true"></div><div class="door r" id="doorR" aria-hidden="true"></div>
+
 <!-- ══════════════════ ESTAMPA ══════════════════ -->
-<header class="hero">
+<header class="hero" id="topo">
   <div class="hero__plate">
     <svg class="hero__image" viewBox="0 0 900 600" fill="none"
          role="img"
@@ -690,17 +730,12 @@ footer {
 </header>
 
 <!-- ══════════════════ ABAS ══════════════════ -->
-<nav class="tabs" aria-label="Formato da documentação">
-  <div class="tabs__inner" role="tablist">
-    <button class="tab" role="tab" id="tab-dev" aria-controls="panel-dev" aria-selected="true" data-target="dev">Para humanos</button>
-    <button class="tab" role="tab" id="tab-ai" aria-controls="panel-ai" aria-selected="false" data-target="ai">Para agentes</button>
-  </div>
-</nav>
+
 
 <main class="shell">
 
 <!-- ══════════════════ PAINEL: HUMANOS ══════════════════ -->
-<section class="panel" id="panel-dev" role="tabpanel" aria-labelledby="tab-dev" data-active="true">
+<section class="panel" id="panel-dev">
 
   <div class="section">
     <p class="lede">Dedup percorre as pastas que você aponta, agrupa os arquivos por tamanho, calcula BLAKE3 só de quem tem companhia nesse tamanho, e escolhe um de cada grupo para ser o canônico. Os outros são cópias. O que fazer com elas é escolha sua — e toda escolha destrutiva começa em modo de ensaio, sem tocar em disco.</p>
@@ -956,7 +991,7 @@ dedup completion fish &gt; ~/.config/fish/completions/dedup.fish</code></pre>
 </section>
 
 <!-- ══════════════════ PAINEL: AGENTES ══════════════════ -->
-<section class="panel" id="panel-ai" role="tabpanel" aria-labelledby="tab-ai" data-active="false">
+<section class="panel" id="panel-ai">
 
   <div class="section">
     <p class="lede">Esta aba descreve o Dedup em forma estruturada. As invariantes listadas adiante não são recomendação: são verificações executadas em <code>actions.CheckInvariants</code> antes de qualquer escrita, e cuja violação aborta o plano inteiro.</p>
@@ -1195,27 +1230,44 @@ audit:
 
 <script>
 (function () {
-  const tabs = Array.from(document.querySelectorAll('.tab'));
-  const panels = new Map(
-    Array.from(document.querySelectorAll('.panel')).map(p => [p.id.replace('panel-', ''), p])
-  );
-
-  function select(target) {
-    tabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.target === target)));
-    panels.forEach((panel, key) => panel.setAttribute('data-active', String(key === target)));
+  'use strict';
+  var root = document.documentElement;
+  var KEY = 'dedup-guia-mode';
+  var rmq = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+  function rm() { return rmq.matches; }
+  function store(k, v) {
+    try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; }
+    return null;
   }
 
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => select(tab.dataset.target));
-    tab.addEventListener('keydown', e => {
-      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-      e.preventDefault();
-      const i = tabs.indexOf(tab);
-      const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
-      next.focus();
-      select(next.dataset.target);
-    });
-  });
+  var modeBtns = [].slice.call(document.querySelectorAll('.seg button[data-mode]'));
+  var dl = document.getElementById('doorL'), dr = document.getElementById('doorR'), busy = false;
+  function mode() { return root.getAttribute('data-mode') === 'ia' ? 'ia' : 'dev'; }
+  function setMode(m) {
+    root.setAttribute('data-mode', m);
+    store(KEY, m);
+    modeBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-mode') === m)); });
+  }
+  function switchMode(next) {
+    if (next === mode() || busy) return;
+    if (rm() || !dl || !dl.animate) { setMode(next); return; }
+    busy = true;
+    dl.style.display = dr.style.display = 'block';
+    var o = { duration: 280, easing: 'cubic-bezier(.7,0,.2,1)', fill: 'forwards' };
+    var a = dl.animate([{ transform: 'translateX(-101%)' }, { transform: 'translateX(0)' }], o);
+    dr.animate([{ transform: 'translateX(101%)' }, { transform: 'translateX(0)' }], o);
+    a.onfinish = function () {
+      setMode(next);
+      var b = dl.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-101%)' }], o);
+      dr.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(101%)' }], o);
+      b.onfinish = function () {
+        dl.getAnimations().forEach(function (x) { x.cancel(); }); dr.getAnimations().forEach(function (x) { x.cancel(); });
+        dl.style.display = dr.style.display = 'none'; busy = false;
+      };
+    };
+  }
+  modeBtns.forEach(function (b) { b.addEventListener('click', function () { switchMode(b.getAttribute('data-mode')); }); });
+  setMode(store(KEY) === 'ia' ? 'ia' : 'dev');
 })();
 </script>
 

@@ -17,6 +17,8 @@
    ============================================================ */
 
 :root {
+  /* Medida padrão de todo texto centralizado */
+  --measure-center: 45ch;
   /* — Pergaminho queimado — */
   --ground:    #241C14;
   --ground-2:  #1C1610;
@@ -119,12 +121,12 @@ a { color: inherit; }
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: var(--s24) var(--s12);
+  padding: var(--s16) var(--s12) var(--s12);
   position: relative;
   z-index: 2;
 }
 
-.emblem { width: min(230px, 46vw); height: auto; margin-bottom: var(--s8); }
+.emblem { width: min(230px, 46vw); height: auto; margin: auto auto var(--s8); }
 
 /* Cada traço do emblema se desenha. */
 .emblem [data-draw] {
@@ -183,7 +185,7 @@ a { color: inherit; }
   font-weight: 300;
   font-size: clamp(1.1rem, 2.4vw, 1.5rem);
   color: var(--ink-2);
-  max-width: 46ch;
+  max-width: var(--measure-center);
   margin: var(--s8) auto 0;
   line-height: 1.6;
 }
@@ -199,17 +201,26 @@ a { color: inherit; }
 @keyframes rise { from { opacity: 0; transform: translateY(22px); } }
 
 .front__meta {
-  margin-top: var(--s16);
-  display: flex; flex-wrap: wrap; gap: var(--s8);
+  margin-top: var(--s12);
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: var(--s3) var(--s8);
   justify-content: center;
+  margin-bottom: var(--s12);
   font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase;
   color: var(--ink-4);
 }
 .front__meta b { color: var(--sepia); font-weight: 600; }
+/* Filete que separa uma divisa da outra. */
+.front__meta span + span::before {
+  content: ''; display: inline-block;
+  width: 1px; height: 0.9em;
+  background: var(--gold-deep); opacity: 0.5;
+  margin-right: var(--s4);
+  vertical-align: -0.1em;
+}
 
 .front__scroll {
-  position: absolute; bottom: var(--s12); left: 50%;
-  transform: translateX(-50%);
+  margin-top: auto;
   font-size: 0.62rem; letter-spacing: 0.3em; text-transform: uppercase;
   color: var(--ink-4);
   animation: rise 1100ms var(--ease) 2000ms backwards;
@@ -238,6 +249,7 @@ a { color: inherit; }
    ============================================================ */
 
 .sec { padding: var(--s40) 0; position: relative; z-index: 2; }
+#pranchas { padding-top: var(--s16); }
 
 .sec__head { text-align: center; margin-bottom: var(--s24); }
 
@@ -261,7 +273,7 @@ a { color: inherit; }
   font-style: italic; font-weight: 300;
   font-size: clamp(1.05rem, 2vw, 1.3rem);
   color: var(--ink-2);
-  max-width: 54ch; margin: var(--s6) auto 0;
+  max-width: var(--measure-center); margin: var(--s6) auto 0;
   line-height: 1.65;
 }
 
@@ -484,7 +496,8 @@ a { color: inherit; }
   .plates { gap: var(--s8); }
   .tenet { grid-template-columns: var(--s8) 1fr; gap: var(--s4); }
   .tenet__n { font-size: 1.1rem; }
-  .front__meta { gap: var(--s4); }
+  .front__meta { gap: var(--s2) var(--s4); }
+  .front__meta span + span::before { display: none; }
 }
 
 /* ============================================================
@@ -560,7 +573,7 @@ a { color: inherit; }
 
   <h1 class="front__title">La Bottega<em>Caporali de Andrade</em></h1>
 
-  <p class="front__sub">Quatro ofícios em exposição. Cada peça traz consigo a especificação que a governa, a evidência que sustenta o que ela afirma, e a recusa explícita daquilo que escolheu não fazer.</p>
+  <p class="front__sub">Abandone o minimalismo moderno sem alma. Abrace o renascentismo digital.</p>
 
   <div class="front__meta">
     <span><b>IV</b> peças</span>
