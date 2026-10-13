@@ -1,0 +1,10 @@
+# Instruções locais do Claude Code — não pertencem ao repositório público
+CLAUDE.md
+.claude/
+
+# Lixo de sistema operacional e de editor
+.DS_Store
+Thumbs.db
+*.swp
+*~
+reference.md
