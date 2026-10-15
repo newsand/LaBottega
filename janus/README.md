@@ -58,26 +58,46 @@ seu próprio backend, que é quem:
 |---|---|---|
 | `crazy-front` | `../crazy-front` | só chama `/api/*` do `crazy-back` |
 | `crazy-back` | `../crazy-back` | chama o Janus, guarda `Profile{role}` local |
-| `janus` | `../janus` | identidade + JWT, nenhuma role |
+| `janus` | `../janus-mailer` (branch `Mailer-service`) | identidade + JWT + envio de e-mail, nenhuma role |
 
 ---
 
 ## 2. Configuração e segredos
 
-Seu backend precisa de três variáveis (ver `crazy-back/internal/config/config.go`):
+Seu backend precisa destas variáveis (ver `crazy-back/internal/config/config.go`):
 
 | Variável | Exemplo | Uso |
 |---|---|---|
 | `JWT_SECRET` | mesmo valor do Janus | validar o JWT localmente (HS256) |
 | `JANUS_URL` | `http://localhost:8080` | base URL para as chamadas HTTP |
-| `JANUS_SERVICE_KEY` | uma das `SERVICE_KEYS` do Janus | CRUD de usuários e invites |
+| `JANUS_SERVICE_KEY` | uma das `SERVICE_KEYS` do Janus | CRUD de usuários, invites, magic link e recuperação de senha |
 
 O Janus precisa ter, no seu próprio `.env`/ambiente:
 
 ```env
 JWT_SECRET=<mesmo segredo usado acima — 45+ chars>
 SERVICE_KEYS=chave-do-seu-produto-45+chars,chave-anterior-para-rotacao-45+chars
+
+# E-mail (o Janus é quem envia — seu backend só manda assunto e texto)
+MAILER_STUB=false                      # true = só loga o e-mail no console (dev)
+APP_BASE_URL=https://app.seuproduto.com # URL do SEU front: os links dos e-mails são montados com ela
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587                          # STARTTLS
+SMTP_USER=conta@seudominio.com         # e-mail completo (Gmail: use "senha de app")
+SMTP_PASS=xxxx xxxx xxxx xxxx
+MAIL_FROM_NAME=SeuProduto
+MAIL_FROM_EMAIL=conta@seudominio.com
 ```
+
+`APP_BASE_URL`, `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` e `MAIL_FROM_EMAIL` são
+obrigatórios quando `MAILER_STUB=false` (o Janus não sobe sem eles). Opcionais: `MAILER_WORKER_INTERVAL`
+(padrão `2s`) e `MAILER_MAX_ATTEMPTS` (padrão `5`).
+
+**Se o Janus roda em docker compose**, o `docker-compose.yml` precisa repassar essas
+variáveis ao container (listar `MAILER_STUB`, `SMTP_*`, `MAIL_FROM_*`, `APP_BASE_URL`,
+`MAILER_*` em `environment:`) — o compose só repassa o que está listado. A tabela
+`mail_outbox` vem de `migrations/002_mail_outbox.sql`; em um volume de Postgres que já
+existia antes, aplique essa migration à mão.
 
 **Mínimo de 45 caracteres** para o `JWT_SECRET` e **para cada** chave de `SERVICE_KEYS`: sem
 `DEV_ENV=true`, o Janus recusa iniciar com segredo menor (e com `SERVICE_KEYS`
@@ -293,6 +313,8 @@ gravado não tem espaços nas pontas. A mesma regra vale no `PATCH /v1/users/:id
 no endpoint de criação do seu próprio backend — valide/apare lá também, antes de chamar o
 Janus (`crazy-back/features/admin/handler.go:CreateUser` faz isso).
 
+`cpf`, se enviado, precisa ter 11 dígitos ou o formato `000.000.000-00`; outro formato → `400 {"error":"cpf invalid"}` (vale também no `PATCH`). Vazio conta como não informado.
+
 `password` é opcional aqui — sem ela o usuário fica sem `password_hash` (útil pro fluxo
 de invite: cria-se o usuário sem senha, e só o accept do invite define a senha).
 Resposta `201`:
@@ -391,11 +413,14 @@ Resumo:
 
 ---
 
-## 7. Convite por magic link
+## 7. Convite por e-mail
 
 Fluxo completo pra convidar alguém que ainda não tem conta (implementado em
 `crazy-back/features/admin/handler.go:CreateInvite` +
 `crazy-back/features/invite/handler.go`).
+
+**Quem faz o quê:** o **texto** do e-mail é do seu produto; o **envio** é do Janus
+(outbox + worker SMTP). O Janus gera o token, monta o link e substitui `{{link}}` no corpo.
 
 ### 7.1 — Seu backend cria o convite
 
@@ -404,37 +429,40 @@ POST /v1/invites
 Authorization: Bearer <service_key>
 ```
 ```json
-{ "email": "novo@example.com" }
-```
-
-Resposta (com `MAILER_STUB=true`, o padrão em dev):
-```json
 {
-  "message": "invite sent",
   "email": "novo@example.com",
-  "token": "a1b2c3...",
-  "expires_at": "2026-09-24T16:17:21Z"
+  "subject": "Você foi convidado para o Crazy",
+  "body": "Olá,\n\nPara ativar sua conta acesse:\n\n{{link}}\n\nO convite vale por 7 dias.\n"
 }
 ```
 
-`token`/`expires_at` só existem com `MAILER_STUB=true`. Com um mailer real
-(`MAILER_STUB=false`), o Janus entrega o convite por e-mail e **não** devolve o
-token — nesse caso seu backend não tem como montar o link sozinho; o e-mail enviado
-pelo Janus é quem carrega o link (ajuste o template de e-mail para apontar pro
-`accept_url` do seu produto, não pro Janus).
+- `subject` (até 200 chars) e `body` (até 10000) são **obrigatórios**.
+- `body` **precisa conter `{{link}}`** — senão `422 body must contain {{link}}`. Acima dos limites de tamanho de `subject`/`body` → `422`.
+- O link gerado é `APP_BASE_URL + /invite?token=<token>` — **seu front precisa ter a
+  rota `/invite`** (lê o `token` da query e chama seu backend).
 
-Seu backend deve:
-1. guardar localmente `{ email, role escolhida, hash do token, expires_at }` — o
-   Janus só guarda o hash, guardar de novo localmente é o que permite ao seu
-   backend saber **qual role** aplicar quando o convite for aceito (o Janus não
-   tem esse conceito). Ver `crazy-back/internal/models/models.go:Invite` +
-   `HashInviteToken` (SHA-256 simples, calculado no seu lado).
-2. montar o link: `<seu-frontend>/accept-invite?token=<token>`.
-3. mostrar/copiar esse link pro admin enviar (ou, com mailer real, nem chega a isso).
+Resposta `201`:
+```json
+{ "message": "invite sent", "email": "novo@example.com" }
+```
+Com `MAILER_STUB=true` (só dev) a resposta também traz `token` e `expires_at`, e o e-mail
+aparece no log do Janus (`docker compose logs app`). **Com SMTP real o token nunca volta
+na API** — não dependa desse campo.
+
+O e-mail entra na fila (`mail_outbox`) na mesma transação do convite e o worker envia em
+segundos, com até `MAILER_MAX_ATTEMPTS` tentativas (backoff exponencial, teto de 5 min). Falha de SMTP **não** aparece na
+resposta; consulte `last_error` na tabela `mail_outbox` se o e-mail não chegar.
+
+Seu backend deve guardar localmente `{ email, role escolhida, expires_at }`
+(`crazy-back/internal/models/models.go:Invite`) — o Janus não tem o conceito de role.
+Como o token não volta, **não dá para guardar o hash do token**; o aceite (7.2) encontra
+o convite local pelo **e-mail**. Se a coluna de hash for obrigatória no seu schema,
+grave um valor único qualquer.
 
 ### 7.2 — O convidado aceita (endpoint público, sem auth)
 
-Seu backend expõe um endpoint público (sem JWT, sem service key) que:
+O convidado abre o link do e-mail (`<front>/invite?token=…`), define nome e senha, e o
+front chama um endpoint público (sem JWT, sem service key) do seu backend:
 
 ```
 POST /api/invite/accept   (seu backend, público)
@@ -444,24 +472,24 @@ POST /api/invite/accept   (seu backend, público)
 ```
 
 Internamente ele:
-1. recalcula o hash do `token` recebido e busca o convite local por esse hash —
-   confere se já foi usado / expirou **antes** de gastar uma chamada no Janus;
-2. chama `POST /v1/invites/accept` no Janus:
+1. chama `POST /v1/invites/accept` no Janus — **o Janus é a autoridade** sobre validade
+   do token (uso único, 7 dias, amarrado ao e-mail):
    ```
    POST /v1/invites/accept
    ```
    ```json
    { "token": "a1b2c3...", "password": "novaSenha123", "nome": "Nome Completo" }
    ```
-   Resposta: `{ "message": "account activated", "user_id": "<uuid>" }`. Esse endpoint é
+   Resposta: `{ "message": "account activated", "user_id": "<uuid>" }`. Endpoint
    **público no Janus também** (rate-limited) — o token opaco É a autenticação.
-3. cria o `Profile` local (`id = user_id`, `role` = a que foi escolhida no passo 7.1),
-   gera qualquer dado inicial do seu produto;
-4. marca o convite local como aceito;
-5. (opcional, mas é o que o `crazy-back` faz) já loga o usuário: chama
-   `POST /v1/auth/login` com o e-mail + a senha que ele acabou de definir, e devolve os
-   tokens pro frontend — assim o convidado já cai logado, sem precisar digitar a senha
-   de novo.
+   Token inválido/expirado/usado → `401 invalid or expired invite`.
+2. descobre o e-mail da conta com `GET /v1/users/<user_id>` (service key), já que o
+   token não é conhecido localmente;
+3. busca o convite local pendente por esse e-mail (o mais recente) para saber a **role**;
+4. cria o `Profile` local (`id = user_id`, `role` do convite) e os dados iniciais do produto;
+5. marca o convite local como aceito;
+6. (opcional, é o que o `crazy-back` faz) chama `POST /v1/auth/login` com e-mail + a senha
+   recém-definida e devolve os tokens ao front — o convidado já cai logado.
 
 Regras do Janus que valem a pena saber (`AUTH-MVP.md` §7 "Invite"):
 - Token amarra o e-mail: aceitar com outro e-mail é rejeitado.
@@ -472,58 +500,80 @@ Regras do Janus que valem a pena saber (`AUTH-MVP.md` §7 "Invite"):
 
 ## 8. Magic link de login (usuário já existente)
 
-Diferente do invite (que é pra criar conta), isto é "esqueci minha senha mas quero só
-entrar" / passwordless login pra quem **já tem conta ativa**.
+Diferente do invite (que é pra criar conta), isto é login sem senha pra quem **já tem
+conta ativa e com senha definida**. Agora também é **chamada de backend**: exige service
+key e o front **não** pode chamar o Janus direto — seu backend expõe a rota e repassa.
 
 ```
 POST /v1/auth/magic-link
+Authorization: Bearer <service_key>
 ```
 ```json
-{ "email": "user@example.com" }
+{
+  "email": "user@example.com",
+  "subject": "Seu link de acesso",
+  "body": "Para entrar acesse:\n\n{{link}}\n\nO link vale por 15 minutos.\n"
+}
 ```
-Resposta **sempre genérica** (não revela se o e-mail existe):
+Mesmas regras de `subject`/`body` do invite (`{{link}}` obrigatório → `422`). O link
+gerado é `APP_BASE_URL + /magic-link?token=<token>` (seu front precisa dessa rota).
+
+Resposta **sempre genérica** `200` (não revela se o e-mail existe, nem se a conta está
+desativada ou sem senha):
 ```json
 { "message": "if the email exists, a magic link will be sent" }
 ```
 
-Com `MAILER_STUB=true` o token vai só pro **log do container** do Janus (não tem
-retorno de token na API pra esse endpoint — diferente do invite, aqui não há service key
-na chamada, então liberar o token na resposta seria um risco real de enumeração). Para
-usar isso de verdade em dev, leia o log do Janus (`docker compose logs -f app`) ou
-implemente um mailer real antes de habilitar esse fluxo pro usuário final.
-
 ```
-POST /v1/auth/magic-link/consume
+POST /v1/auth/magic-link/consume      (público)
 ```
 ```json
 { "token": "a1b2c3..." }
 ```
 Resposta: mesmo shape do login (`access_token`/`refresh_token`/...), ou o desafio de 2FA
 se `2fa_enabled`. Bloqueado (401) se o usuário ainda não tiver senha definida (convite
-não aceito) — evita conta zumbi.
+não aceito) — evita conta zumbi. Lembre de aplicar no seu backend a mesma checagem de
+`Profile` local/`Active` que o login faz.
 
 ---
 
 ## 9. Recuperação de senha
 
-```
-POST /v1/password/forgot
-```
-```json
-{ "email": "user@example.com" }
-```
-Resposta sempre genérica (mesma lógica anti-enumeração do magic-link). Token só no log
-(`MAILER_STUB=true`) — não volta na API.
+Também é chamada de **backend com service key** — o front fala só com seu backend.
 
 ```
-POST /v1/password/reset
+POST /v1/password/forgot
+Authorization: Bearer <service_key>
+```
+```json
+{
+  "email": "user@example.com",
+  "subject": "Recuperação de senha",
+  "body": "Para escolher uma nova senha acesse:\n\n{{link}}\n\nO link vale por 1 hora e só pode ser usado uma vez.\n"
+}
+```
+O link gerado é `APP_BASE_URL + /password/reset?token=<token>` (seu front precisa dessa
+rota). Resposta sempre `200` genérica (anti-enumeração). Token de uso único, 1 hora; um
+novo pedido invalida os anteriores. Sem `{{link}}` no body → `422`; sem service key → `401`.
+
+```
+POST /v1/password/reset      (público — o token é a autenticação)
 ```
 ```json
 { "token": "a1b2c3...", "new_password": "novaSenha123" }
 ```
-Troca a senha, consome o token, **revoga todas as famílias de refresh token** do
-usuário (força novo login em todo lugar). Seu backend não precisa fazer nada além de
-repassar essas duas chamadas — não há role/Profile envolvido aqui.
+Troca a senha, consome o token, **revoga todas as famílias de refresh token** do usuário
+(força novo login em todo lugar). Token inválido/expirado/reusado → `401 invalid or expired token`.
+
+Como o `crazy-back` expõe isso ao browser:
+
+| Rota do seu backend | Pública? | O que faz |
+|---|---|---|
+| `POST /api/auth/forgot-password` `{ email }` | sim | chama `/v1/password/forgot` com a service key e o texto do e-mail; **sempre** responde `200` genérico, mesmo se o Janus falhar (só loga) |
+| `POST /api/auth/reset-password` `{ token, password }` | sim | repassa para `/v1/password/reset` e relaya status/corpo |
+
+No front (`crazy-front`): telas `/forgot-password` e `/password/reset?token=…`, com o link
+"Esqueci minha senha" no login. Mensagens de erro do reset devem ser genéricas.
 
 ---
 
@@ -588,8 +638,17 @@ Nada disso toca em `Profile`/role — é inteiramente gerenciado pelo janus.
       todas as falhas, inclusive `Profile.Active=false` — nunca `account disabled`.
 - [ ] Desativar usuário = desativar nos dois lados (Janus `disabled_at` + seu
       `Active=false`), sabendo que o access token já emitido some só quando expira.
-- [ ] Fluxo de invite guarda o hash do token localmente pra saber qual role aplicar no
-      accept (o Janus não tem esse conceito).
+- [ ] Fluxo de invite guarda `{email, role}` localmente (o Janus não tem role) e o accept
+      acha o convite **por e-mail** — com SMTP real o token não volta na API.
+- [ ] `invite`, `magic-link` e `password/forgot` são chamados **só pelo backend**, com service
+      key, enviando `subject` + `body` contendo `{{link}}` (sem isso: `422`).
+- [ ] `APP_BASE_URL` do Janus aponta para o **seu front**, e o front tem as rotas `/invite`,
+      `/password/reset` (e `/magic-link`, se usar).
+- [ ] `docker-compose.yml` do Janus repassa as variáveis de SMTP/mailer; `mail_outbox`
+      (migration 002) existe no banco.
+- [ ] `MAILER_STUB=false` em produção; senha SMTP só no ambiente do Janus (nunca no repo).
+- [ ] Rota de "esqueci a senha" do seu backend responde sempre genérico (não vaza se o
+      e-mail existe), mesmo quando o Janus falha.
 - [ ] Endpoint de accept-invite do seu backend é público (sem JWT) mas o resto do
       backend continua exigindo JWT válido.
 - [ ] Nenhum claim `roles`/`tenant` é esperado ou lido do JWT — role vem sempre do seu
@@ -606,19 +665,19 @@ Nada disso toca em `Profile`/role — é inteiramente gerenciado pelo janus.
 | POST | `/v1/auth/refresh` | nenhuma | proxy direto |
 | POST | `/v1/auth/logout` | Bearer access | proxy direto |
 | GET | `/v1/me` | Bearer access | opcional (você já tem o `sub` do seu próprio JWT parse) |
-| POST | `/v1/auth/magic-link` | nenhuma | proxy direto |
+| POST | `/v1/auth/magic-link` | Bearer service_key | seu backend envia `email`+`subject`+`body` (`{{link}}`) |
 | POST | `/v1/auth/magic-link/consume` | nenhuma | proxy direto |
 | POST | `/v1/auth/2fa/verify` | nenhuma | proxy direto |
 | POST | `/v1/me/2fa/enable` | Bearer access | proxy direto |
 | POST | `/v1/me/2fa/disable` | Bearer access | proxy direto |
-| POST | `/v1/password/forgot` | nenhuma | proxy direto |
-| POST | `/v1/password/reset` | nenhuma | proxy direto |
+| POST | `/v1/password/forgot` | Bearer service_key | seu backend envia `email`+`subject`+`body` (`{{link}}`) |
+| POST | `/v1/password/reset` | nenhuma | proxy direto (`new_password`) |
 | POST | `/v1/users` | Bearer service_key | + criar `Profile` local |
 | GET | `/v1/users?page=N` | Bearer service_key | listar (paginado, 100/pág) / achar por e-mail percorrendo as páginas |
 | GET | `/v1/users/:id` | Bearer service_key | detalhe |
 | PATCH | `/v1/users/:id` | Bearer service_key | + espelhar em `Profile` local |
-| POST | `/v1/invites` | Bearer service_key | + guardar invite local (role, hash) |
-| POST | `/v1/invites/accept` | nenhuma | + criar `Profile` local, marcar aceito |
+| POST | `/v1/invites` | Bearer service_key | `email`+`subject`+`body` (`{{link}}`) + guardar invite local (email, role) |
+| POST | `/v1/invites/accept` | nenhuma | + `GET /v1/users/:id` p/ e-mail, criar `Profile` local, marcar aceito |
 
 Exemplos completos, testados de ponta a ponta, estão no código de `crazy-back` — em
 especial `features/auth/`, `features/admin/`, `features/invite/` e
