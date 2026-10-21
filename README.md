@@ -1,4 +1,4 @@
-# La Bottega Caporali de Andrade
+  # La Bottega Caporali de Andrade
 https://newsand.github.io/LaBottega/
 
 Ateliê de programas livres. A porta de entrada é **[`index.html`](index.html)** — abra no navegador.

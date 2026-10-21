@@ -10,7 +10,7 @@ exatamente o padrão usado na integração de referência **crazy-back + crazy-f
 > **Regra de ouro do Janus:** ele só prova identidade (`sub` = UUID do usuário) e
 > emite JWT. **Não tem roles, não tem RBAC, não redireciona nada.** Papéis, permissões e
 > qualquer dado de produto vivem **no seu backend**, nunca aqui. Ver
-> `../janus/AUTH-MVP.md` §1 para o contrato de produto completo.
+> `../janus/specs/auth.md` §1 para o contrato de produto completo.
 
 ## Pagina Documentacao
 
@@ -58,7 +58,7 @@ seu próprio backend, que é quem:
 |---|---|---|
 | `crazy-front` | `../crazy-front` | só chama `/api/*` do `crazy-back` |
 | `crazy-back` | `../crazy-back` | chama o Janus, guarda `Profile{role}` local |
-| `janus` | `../janus-mailer` (branch `Mailer-service`) | identidade + JWT + envio de e-mail, nenhuma role |
+| `janus` | `../janus` | identidade + JWT + envio de e-mail, nenhuma role |
 
 ---
 
@@ -81,6 +81,7 @@ SERVICE_KEYS=chave-do-seu-produto-45+chars,chave-anterior-para-rotacao-45+chars
 # E-mail (o Janus é quem envia — seu backend só manda assunto e texto)
 MAILER_STUB=false                      # true = só loga o e-mail no console (dev)
 APP_BASE_URL=https://app.seuproduto.com # URL do SEU front: os links dos e-mails são montados com ela
+MAILER_PROVIDER=smtp                   # smtp (padrão) | sendpulse
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587                          # STARTTLS
 SMTP_USER=conta@seudominio.com         # e-mail completo (Gmail: use "senha de app")
@@ -89,15 +90,31 @@ MAIL_FROM_NAME=SeuProduto
 MAIL_FROM_EMAIL=conta@seudominio.com
 ```
 
-`APP_BASE_URL`, `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` e `MAIL_FROM_EMAIL` são
-obrigatórios quando `MAILER_STUB=false` (o Janus não sobe sem eles). Opcionais: `MAILER_WORKER_INTERVAL`
+Com `MAILER_PROVIDER=sendpulse` o envio vai pela API HTTPS do SendPulse (porta 443) em vez
+de SMTP — use quando o host bloqueia as portas SMTP de saída (25/465/587/2525), comum em
+VMs de nuvem. Troque o bloco `SMTP_*` por:
+
+```env
+MAILER_PROVIDER=sendpulse
+SENDPULSE_USER_ID=sp_id_...            # OAuth client_id
+SENDPULSE_SECRET=sp_sk_...             # OAuth client_secret
+MAIL_FROM_EMAIL=conta@seudominio.com   # precisa ser remetente verificado no SendPulse
+```
+
+Com `MAILER_STUB=false` (fora do `DEV_ENV`) o Janus não sobe sem: `APP_BASE_URL` e
+`MAIL_FROM_EMAIL` sempre; `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` se `MAILER_PROVIDER=smtp`;
+`SENDPULSE_USER_ID` e `SENDPULSE_SECRET` se `sendpulse`. Com `sendpulse`, um
+`MAIL_FROM_EMAIL` não verificado falha a entrega com `422 Sender is not valid`.
+`DEV_ENV=true` pula essa validação. Opcionais: `MAILER_WORKER_INTERVAL`
 (padrão `2s`) e `MAILER_MAX_ATTEMPTS` (padrão `5`).
 
 **Se o Janus roda em docker compose**, o `docker-compose.yml` precisa repassar essas
-variáveis ao container (listar `MAILER_STUB`, `SMTP_*`, `MAIL_FROM_*`, `APP_BASE_URL`,
-`MAILER_*` em `environment:`) — o compose só repassa o que está listado. A tabela
-`mail_outbox` vem de `migrations/002_mail_outbox.sql`; em um volume de Postgres que já
-existia antes, aplique essa migration à mão.
+variáveis ao container (listar `MAILER_STUB`, `MAILER_PROVIDER`, `SMTP_*`, `SENDPULSE_*`,
+`MAIL_FROM_*`, `APP_BASE_URL`, `MAILER_*` em `environment:`) — o compose só repassa o que
+está listado (o `docker-compose.yml` do repo do Janus força `MAILER_STUB=true`). A tabela
+`mail_outbox` vem de `migrations/002_mail_outbox.sql`, e o Janus **aplica as migrations
+pendentes sozinho a cada boot** (controle em `schema_migrations`) — não precisa rodar
+SQL à mão, nem em volume de Postgres antigo.
 
 **Mínimo de 45 caracteres** para o `JWT_SECRET` e **para cada** chave de `SERVICE_KEYS`: sem
 `DEV_ENV=true`, o Janus recusa iniciar com segredo menor (e com `SERVICE_KEYS`
@@ -185,7 +202,7 @@ produto:
 - O refresh de usuário desabilitado responde `401 invalid refresh token` (antes:
   `account disabled`).
 
-Contrato original: `janus/AUTH-MVP.md` §7, "Login — falha de autenticação é uma só".
+Contrato original: `janus/specs/auth.md` §5 (Login).
 
 ### Refresh
 
@@ -238,7 +255,7 @@ token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token)
 // claims.Subject == o UUID do usuário (o "sub" do JWT)
 ```
 
-Claims do access token (fechado, não muda — ver `AUTH-MVP.md` §3):
+Claims do access token (fechado, não muda — ver `specs/auth.md` §3):
 
 | Claim | Sempre presente | Notas |
 |---|---|---|
@@ -420,7 +437,7 @@ Fluxo completo pra convidar alguém que ainda não tem conta (implementado em
 `crazy-back/features/invite/handler.go`).
 
 **Quem faz o quê:** o **texto** do e-mail é do seu produto; o **envio** é do Janus
-(outbox + worker SMTP). O Janus gera o token, monta o link e substitui `{{link}}` no corpo.
+(outbox + worker, via SMTP ou SendPulse). O Janus gera o token, monta o link e substitui `{{link}}` no corpo.
 
 ### 7.1 — Seu backend cria o convite
 
@@ -446,11 +463,11 @@ Resposta `201`:
 { "message": "invite sent", "email": "novo@example.com" }
 ```
 Com `MAILER_STUB=true` (só dev) a resposta também traz `token` e `expires_at`, e o e-mail
-aparece no log do Janus (`docker compose logs app`). **Com SMTP real o token nunca volta
+aparece no log do Janus (`docker compose logs app`). **Com envio real (SMTP ou SendPulse) o token nunca volta
 na API** — não dependa desse campo.
 
 O e-mail entra na fila (`mail_outbox`) na mesma transação do convite e o worker envia em
-segundos, com até `MAILER_MAX_ATTEMPTS` tentativas (backoff exponencial, teto de 5 min). Falha de SMTP **não** aparece na
+segundos, com até `MAILER_MAX_ATTEMPTS` tentativas (backoff exponencial, teto de 5 min). Falha de envio **não** aparece na
 resposta; consulte `last_error` na tabela `mail_outbox` se o e-mail não chegar.
 
 Seu backend deve guardar localmente `{ email, role escolhida, expires_at }`
@@ -491,7 +508,7 @@ Internamente ele:
 6. (opcional, é o que o `crazy-back` faz) chama `POST /v1/auth/login` com e-mail + a senha
    recém-definida e devolve os tokens ao front — o convidado já cai logado.
 
-Regras do Janus que valem a pena saber (`AUTH-MVP.md` §7 "Invite"):
+Regras do Janus que valem a pena saber (`specs/auth.md` §9, Invite):
 - Token amarra o e-mail: aceitar com outro e-mail é rejeitado.
 - Um novo invite pro mesmo e-mail invalida os invites anteriores desse e-mail.
 - Convite não é signup aberto: só quem tem o token entra.
@@ -639,14 +656,14 @@ Nada disso toca em `Profile`/role — é inteiramente gerenciado pelo janus.
 - [ ] Desativar usuário = desativar nos dois lados (Janus `disabled_at` + seu
       `Active=false`), sabendo que o access token já emitido some só quando expira.
 - [ ] Fluxo de invite guarda `{email, role}` localmente (o Janus não tem role) e o accept
-      acha o convite **por e-mail** — com SMTP real o token não volta na API.
+      acha o convite **por e-mail** — com envio real o token não volta na API.
 - [ ] `invite`, `magic-link` e `password/forgot` são chamados **só pelo backend**, com service
       key, enviando `subject` + `body` contendo `{{link}}` (sem isso: `422`).
 - [ ] `APP_BASE_URL` do Janus aponta para o **seu front**, e o front tem as rotas `/invite`,
       `/password/reset` (e `/magic-link`, se usar).
-- [ ] `docker-compose.yml` do Janus repassa as variáveis de SMTP/mailer; `mail_outbox`
-      (migration 002) existe no banco.
-- [ ] `MAILER_STUB=false` em produção; senha SMTP só no ambiente do Janus (nunca no repo).
+- [ ] `docker-compose.yml` do Janus repassa as variáveis de mailer (SMTP ou SendPulse);
+      `mail_outbox` (migration 002) existe no banco — o Janus migra sozinho no boot.
+- [ ] `MAILER_STUB=false` em produção; senha SMTP / secret do SendPulse só no ambiente do Janus (nunca no repo).
 - [ ] Rota de "esqueci a senha" do seu backend responde sempre genérico (não vaza se o
       e-mail existe), mesmo quando o Janus falha.
 - [ ] Endpoint de accept-invite do seu backend é público (sem JWT) mas o resto do
